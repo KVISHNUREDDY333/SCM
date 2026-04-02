@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - SCMXpertLite{% endblock %}
+
+{% block content %}
+<section style="display: flex; justify-content: center; align-items: center; min-height: 70vh;">
+    <div class="glass-card" style="width: 100%; max-width: 500px; text-align: center; position: relative; overflow: hidden;">
+        <!-- Decorative Glow -->
+        <div style="position: absolute; top: -50px; left: 50%; transform: translateX(-50%); width: 150px; height: 150px; background: var(--primary); border-radius: 50%; opacity: 0.1; filter: blur(40px);"></div>
+
+        <div style="margin-bottom: 1.5rem; position: relative;">
+            <i class="fa-solid fa-user-astronaut" style="font-size: 5rem; color: var(--text-main); background: rgba(255,255,255,0.05); padding: 30px; border-radius: 50%; border: 2px solid var(--primary);"></i>
+        </div>
+        
+        <h2 style="margin-bottom: 0.5rem; font-size: 1.2rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">My Profile</h2>
+        
+        <!-- Profile Details -->
+        <div id="profile" style="margin-bottom: 2rem;">Loading details...</div>
+
+        <!-- Timestamp Section -->
+        <div style="margin-bottom: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem; display: flex; justify-content: center;">
+            <div style="background: rgba(0, 255, 136, 0.05); padding: 15px 30px; border-radius: 12px; border: 1px solid rgba(0, 255, 136, 0.1); min-width: 220px;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">
+                    <i class="fa-solid fa-signal"></i> Active Session Started
+                </div>
+                <div id="loginTime" style="font-size: 1rem; color: #00ff88; font-weight: 600; font-family: 'Courier New', monospace;">
+                    --
+                </div>
+            </div>
+        </div>
+        
+        <button class="btn btn-ghost" onclick="location.reload()">
+            <i class="fa-solid fa-rotate"></i> Refresh Data
+        </button>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (async function(){
+        const el = document.getElementById('profile');
+        const loginEl = document.getElementById('loginTime');
+
+        const formatDate = (dateString) => {
+            if (!dateString) return "Just now";
+            const date = new Date(dateString);
+            // Format: Nov 29, 2025, 02:37 PM
+            return date.toLocaleString('en-US', {
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric',
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true
+            });
+        };
+
+        try {
+            const res = await getJSON('/api/v1/me');
+            if(res.ok) {
+                const u = await res.json();
+                
+                // --- FIX: Username Display ---
+                // If username is empty in DB, fallback to 'Valued User' but try to show DB value first
+                const displayName = u.username ? u.username : "Valued User";
+
+                el.innerHTML = `
+                    <div style="font-size: 2.2rem; font-weight: 700; color: white; margin-bottom: 5px;">
+                        ${displayName}
+                    </div>
+                    <div style="color: var(--primary); font-size: 1.1rem;">
+                        ${u.email}
+                    </div>
+                    <div style="margin-top: 0.8rem; font-size: 0.8rem; color: var(--text-muted);">
+                        ID: <span style="font-family: monospace; background:rgba(255,255,255,0.1); padding:2px 5px; border-radius:4px;">${u.id}</span>
+                    </div>
+                `;
+
+                // --- FIX: Time Display ---
+                loginEl.textContent = formatDate(u.last_login);
+
+            } else { 
+                el.innerHTML = '<span style="color: var(--accent);">Session Expired. Please login again.</span>'; 
+            }
+        } catch(e) { 
+            console.error(e);
+            el.innerHTML = 'Error fetching profile data.'; 
+        }
+    })();
+</script>
+{% endblock %}
