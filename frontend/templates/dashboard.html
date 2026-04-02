@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - SCMXpertLite{% endblock %}
+{% block content %}
+
+<style>
+    /* Specific Dashboard Layout */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 380px 1fr; /* Left Fixed, Right Flexible */
+        gap: 1.5rem;
+        align-items: start; /* Prevent cards from stretching strictly if content differs */
+    }
+
+    /* Stack on smaller screens */
+    @media (max-width: 900px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<section>
+    <!-- Page Header -->
+    <div style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+        <h1 style="font-weight: 700; font-size: 2.5rem;">Dashboard</h1>
+        <p style="color: var(--text-muted);">Overview of supply chain operations</p>
+    </div>
+
+    <div class="dashboard-grid">
+        
+        <!-- LEFT PANEL: Operations Center -->
+        <div class="glass-card" style="display:flex; flex-direction:column; gap:1.5rem; height: 100%;">
+            <h3 style="color: var(--primary); font-size: 1.3rem;">
+                <i class="fa-solid fa-bolt"></i> Operations Center
+            </h3>
+            
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: -10px;">
+                Quick access to core logistics functions.
+            </p>
+
+            <div style="display:grid; gap:4rem; margin-top: auto;">
+                <a href="/create-shipment" class="btn btn-primary" style="justify-content:center; width: 100%; padding: 1rem;">
+                    <i class="fa-solid fa-plus-circle"></i> New Shipment
+                </a>
+                <a href="/my-shipments" class="btn btn-ghost" style="justify-content:center; width: 100%; padding: 1rem;">
+                    <i class="fa-solid fa-list-ul"></i> View Inventory
+                </a>
+                <a href="/data-stream" class="btn btn-ghost" style="justify-content:center; width: 100%; padding: 1rem;">
+                    <i class="fa-solid fa-tower-broadcast"></i> Live Telemetry
+                </a>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: Recent Shipments -->
+        <div class="glass-card" style="min-height: 500px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.3rem;"><i class="fa-solid fa-clock-rotate-left"></i> Recent Shipments</h3>
+                <a href="/my-shipments" style="color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 600;">View All <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+
+            <div id="recentShipments" style="display:flex; flex-direction:column; gap:0.8rem;">
+                <div style="text-align:center; padding:4rem; color:var(--text-muted);">
+                    <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><br><br>Syncing Data...
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (async function(){
+        const el = document.getElementById('recentShipments');
+        try {
+            const res = await getJSON('/api/v1/shipments');
+            const data = await res.json();
+            
+            if(!res.ok || !data.length) { 
+                el.innerHTML = '<div style="text-align:center; padding:3rem; opacity:0.6; border: 1px dashed var(--glass-border); border-radius: 10px;">No active shipments found.<br><br><a href="/create-shipment" style="color:var(--primary)">Create your first shipment</a></div>'; 
+                return; 
+            }
+            
+            el.innerHTML = '';
+            // Display top 5
+            data.slice(0, 5).forEach((s, index) => {
+                const item = document.createElement('div');
+                item.style.cssText = `
+                    background: rgba(255,255,255,0.03); padding: 1.2rem; border-radius: 12px;
+                    border: 1px solid var(--glass-border); display: flex; justify-content: space-between;
+                    align-items: center; animation: fadeInUp 0.5s ease forwards; animation-delay: ${index * 0.1}s;
+                    opacity: 0; transform: translateY(10px); transition: background 0.3s;
+                `;
+                
+                // Hover effect logic
+                item.onmouseenter = () => { item.style.background = 'rgba(255,255,255,0.06)'; };
+                item.onmouseleave = () => { item.style.background = 'rgba(255,255,255,0.03)'; };
+
+                item.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <div style="background:rgba(0,210,255,0.1); width:45px; height:45px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--primary); font-size: 1.2rem;">
+                            <i class="fa-solid fa-box"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight:700; font-size: 1.1rem; color: white;">${s.Shipment_Number}</div>
+                            <div style="font-size:0.85rem; color:var(--text-muted); margin-top: 2px;">
+                                ${s.Goods_Type} &bull; <i class="fa-solid fa-route" style="font-size:0.7rem"></i> ${s.Route_Details}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="color:var(--accent); font-weight:600; font-size: 0.9rem;">In Transit</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top: 2px;">
+                            ${new Date(s.Expected_Delivery_Date).toLocaleDateString()}
+                        </div>
+                    </div>
+                `;
+                el.appendChild(item);
+            });
+        } catch(e) { el.innerHTML = '<div style="color: var(--accent); text-align:center;">Error loading data.</div>'; }
+    })();
+</script>
+{% endblock %}
