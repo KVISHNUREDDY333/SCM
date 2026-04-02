@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Create Shipment - SCMXpertLite{% endblock %}
+
+{% block content %}
+<section>
+    <!-- Layout: 2 Columns (Form Left, Summary Right) -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start;">
+        
+        <!-- LEFT PANEL: FORM FIELDS -->
+        <div class="glass-card">
+            <h2 style="margin-bottom: 0.5rem; font-size: 1.5rem;">Create New Shipment</h2>
+            <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.9rem;">Please fill in all the details below.</p>
+            
+            <form id="createForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    
+                    <!-- Row 1: Identifiers -->
+                    <div class="form-group">
+                        <input name="Shipment_Number" type="text" class="form-input" placeholder=" " required />
+                        <label class="form-label">Shipment Number*</label>
+                    </div>
+                    <div class="form-group">
+                        <input name="Container_number" type="text" class="form-input" placeholder=" " required />
+                        <label class="form-label">Container Number*</label>
+                    </div>
+
+                    <!-- Row 2: Route Splitting (From -> To) -->
+                    <div class="form-group">
+                        <input id="route_from" type="text" class="form-input" placeholder=" " required />
+                        <label class="form-label">From (Origin)*</label>
+                    </div>
+                    <div class="form-group">
+                        <input id="route_to" type="text" class="form-input" placeholder=" " required />
+                        <label class="form-label">To (Destination)*</label>
+                    </div>
+
+                    <!-- Row 3: Goods & Device -->
+                    <div class="form-group">
+                        <input name="Goods_Type" type="text" class="form-input" placeholder=" " required />
+                        <label class="form-label">Goods Type*</label>
+                    </div>
+                    <div class="form-group">
+                        <input name="Device" type="text" class="form-input" placeholder=" " required />
+                        <label class="form-label">Device*</label>
+                    </div>
+
+                    <!-- Row 4: Date & PO -->
+                    <div class="form-group">
+                        <input name="Expected_Delivery_Date" type="datetime-local" class="form-input" style="color-scheme: dark;" required />
+                        <label class="form-label" style="top:-10px; left:10px; background:var(--bg-deep); color:var(--primary); font-size:0.8rem;">Expected Delivery Date*</label>
+                    </div>
+                    <div class="form-group">
+                        <input name="Po_Number" type="text" class="form-input" placeholder=" " required />
+                        <label class="form-label">PO Number*</label>
+                    </div>
+
+                    <!-- Row 5: Delivery & NDC -->
+                    <div class="form-group">
+                        <input name="Delivery_Number" type="text" class="form-input" placeholder=" " />
+                        <label class="form-label">Delivery Number*</label>
+                    </div>
+                    <div class="form-group">
+                        <input name="NDC_Number" type="text" class="form-input" placeholder=" " required />
+                        <label class="form-label">NDC Number*</label>
+                    </div>
+
+                    <!-- Row 6: Batch & Serial -->
+                    <div class="form-group">
+                        <input name="Batch_ID" type="text" class="form-input" placeholder=" " />
+                        <label class="form-label">Batch Id*</label>
+                    </div>
+                    <div class="form-group">
+                        <input name="Serial_Number_of_Goods" type="text" class="form-input" placeholder=" " required />
+                        <label class="form-label">Serial number of Goods*</label>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- RIGHT PANEL: SUMMARY & ACTIONS -->
+        <div class="glass-card" style="display: flex; flex-direction: column; height: 100%;">
+            <h3 style="color: var(--secondary); margin-bottom: 1.5rem;"><i class="fa-solid fa-clipboard-check"></i> Summary</h3>
+            
+            <div class="form-group" style="flex: 1;">
+                <textarea form="createForm" name="Shipment_Description" class="form-input" style="height: 100%; resize: none;" placeholder=" "></textarea>
+                <label class="form-label">Shipment Description*</label>
+            </div>
+
+            <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 1rem;">
+                <button type="submit" form="createForm" class="btn btn-primary" style="justify-content: center; width: 100%; padding: 1rem;">
+                    CREATE SHIPMENT
+                </button>
+                <button type="button" onclick="document.getElementById('createForm').reset()" class="btn" style="background: #ff4757; color: white; justify-content: center; width: 100%; border: none; padding: 1rem;">
+                    CLEAR DETAILS
+                </button>
+            </div>
+            
+            <div id="msg" style="text-align: center; margin-top: 1rem; min-height: 1.2rem;"></div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Gather Form Data
+        const formData = new FormData(e.target);
+        const raw = Object.fromEntries(formData.entries());
+
+        // 1. COMBINE 'FROM' AND 'TO' INTO 'Route_Details' FOR BACKEND
+        const fromLoc = document.getElementById('route_from').value;
+        const toLoc = document.getElementById('route_to').value;
+        raw.Route_Details = `${fromLoc} -> ${toLoc}`;
+
+        // 2. Fix Date Format (ISO 8601)
+        if(raw.Expected_Delivery_Date) {
+            raw.Expected_Delivery_Date = new Date(raw.Expected_Delivery_Date).toISOString();
+        }
+
+        // 3. Remove 'Delivery_Number' if backend model doesn't accept it
+        delete raw.Delivery_Number; 
+
+        const msg = document.getElementById('msg');
+        msg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
+        
+        try {
+            const res = await postJSON('/api/v1/shipments', raw, true);
+            if(res.ok) {
+                msg.innerHTML = '<span style="color:#00ff88">Shipment Created Successfully!</span>';
+                setTimeout(() => window.location.href = '/my-shipments', 1000);
+            } else {
+                const err = await res.json();
+                msg.innerHTML = `<span style="color:#ff4757">${err.detail || 'Failed to create.'}</span>`;
+            }
+        } catch(err) { 
+            console.error(err);
+            msg.innerHTML = '<span style="color:#ff4757">Server connection error.</span>'; 
+        }
+    });
+</script>
+{% endblock %}
