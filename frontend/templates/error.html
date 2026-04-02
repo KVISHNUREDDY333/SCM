@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Error - SCMXpertLite{% endblock %}
+{% block content %}
+<section style="display: flex; justify-content: center; align-items: center; min-height: 70vh;">
+    <div class="glass-card" style="text-align: center; max-width: 600px;">
+        <h1 style="font-size: 6rem; margin: 0; color: var(--primary); text-shadow: 0 0 20px rgba(0,210,255,0.5);">{{ error_code }}</h1>
+        <h2 style="margin-bottom: 1.5rem;">{{ error_message }}</h2>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">The coordinates you are looking for do not exist in our supply chain.</p>
+        <a href="/dashboard" class="btn btn-primary">Return to Base</a>
+    </div>
+</section>
+{% endblock %}
