@@ -29,7 +29,8 @@ def main():
         mongo_client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
         db = mongo_client[DB_NAME]
         collection = db["device_stream"]
-        collection.delete_many({})
+        # collection.delete_many({}) # Consider if you really want to clear history every restart
+
         # Quick ping to check connection
         mongo_client.admin.command('ping')
         print(f"MongoDB Connected: {DB_NAME}")
@@ -45,6 +46,8 @@ def main():
             auto_offset_reset='latest',
             enable_auto_commit=True,
             group_id='scm_archiver_group',
+            session_timeout_ms=30000,
+            heartbeat_interval_ms=10000,
             value_deserializer=lambda x: json.loads(x.decode('utf-8'))
         )
         print(f"Kafka Listening on topic: {KAFKA_TOPIC}")

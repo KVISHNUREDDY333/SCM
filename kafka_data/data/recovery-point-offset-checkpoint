@@ -11,7 +11,7 @@ __consumer_offsets 26 0
 __consumer_offsets 5 0
 __consumer_offsets 38 0
 __consumer_offsets 1 0
-__consumer_offsets 34 0
+__consumer_offsets 34 398
 __consumer_offsets 16 0
 __consumer_offsets 45 0
 __consumer_offsets 12 0
@@ -21,7 +21,7 @@ __consumer_offsets 20 0
 __consumer_offsets 49 0
 __consumer_offsets 0 0
 __consumer_offsets 29 0
-device_data 0 4779
+device_data 0 5971
 __consumer_offsets 25 0
 __consumer_offsets 8 0
 __consumer_offsets 37 0
@@ -50,4 +50,4 @@ __consumer_offsets 27 0
 __consumer_offsets 39 0
 __consumer_offsets 6 0
 __consumer_offsets 35 0
-__consumer_offsets 2 224
+__consumer_offsets 2 815

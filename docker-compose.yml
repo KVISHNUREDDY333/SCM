@@ -64,13 +64,14 @@ services:
         KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 1
         KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
         KAFKA_CREATE_TOPICS: "device_data:1:1"
-        KAFKA_HEAP_OPTS: "-Xmx256m -Xms256m"
+        KAFKA_HEAP_OPTS: "-Xmx512m -Xms512m"
 
       volumes:
         - ./kafka_data:/bitnami/kafka
 
       healthcheck:
         test: ["CMD", "kafka-topics.sh", "--bootstrap-server", "kafka:9092", "--list"]
-        interval: 10s
-        timeout: 5s
-        retries: 5
+        interval: 15s
+        timeout: 10s
+        retries: 10
+        start_period: 30s

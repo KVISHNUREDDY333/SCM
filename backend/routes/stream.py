@@ -4,6 +4,7 @@ from aiokafka import AIOKafkaConsumer
 import asyncio
 import json
 import random
+import uuid
 import datetime
 import os
 from dotenv import load_dotenv
@@ -24,13 +25,16 @@ async def event_generator():
 
     # 1. Try connecting to Kafka
     try:
+        client_id = str(uuid.uuid4())[:8]
         consumer = AIOKafkaConsumer(
             KAFKA_TOPIC,
             bootstrap_servers=KAFKA_SERVER,
-            value_deserializer=lambda m: json.loads(m.decode('utf-8')),  # Add deserializer
+            value_deserializer=lambda m: json.loads(m.decode('utf-8')),
             auto_offset_reset='latest',
-            enable_auto_commit=True,
-            group_id="scm_dashboard_group"
+            enable_auto_commit=False,  # No need to commit since it's a transient stream
+            group_id=f"scm_dashboard_group_{client_id}",
+            session_timeout_ms=30000,
+            heartbeat_interval_ms=10000
         )
         await consumer.start()
         kafka_available = True
