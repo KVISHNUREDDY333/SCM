@@ -1,0 +1,21 @@
+# Use official lightweight Python image
+FROM python:3.10-slim
+
+# Set working directory
+WORKDIR /app
+
+# INSTALL NETCAT (CRITICAL for your docker-compose entrypoint)
+RUN apt-get update && apt-get install -y \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# The actual execution command is defined in your docker-compose.yml 'entrypoint'
+# But we provide a default just in case
+CMD ["python", "kafka/producer.py"]
