@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}Live Stream - SCMXpertLite{% endblock %}
+
+{% block content %}
+<style>
+    /* --- BREAKOUT STYLE --- */
+    .wide-layout {
+        width: 85vw;
+        max-width: 1800px; 
+        margin-left: 50%;
+        transform: translateX(-50%);
+    }
+
+    /* Status Badge Styling */
+    .status-badge {
+        display: flex; align-items: center; gap: 8px; padding: 6px 12px;
+        border-radius: 20px; background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;
+    }
+    .status-badge.active { border-color: #00ff88; background: rgba(0, 255, 136, 0.1); color: #00ff88; }
+    .status-badge.paused { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.1); color: #ff6b6b; }
+
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: currentColor; box-shadow: 0 0 8px currentColor; }
+
+    /* Toggle Button Styling */
+    .btn-toggle-stream {
+        padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+        cursor: pointer; border: none; display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+    }
+    .btn-stop { background: rgba(255, 99, 71, 0.2); color: #ff6347; border: 1px solid #ff6347; }
+    .btn-stop:hover { background: #ff6347; color: white; }
+    .btn-start { background: rgba(0, 210, 255, 0.2); color: #00d2ff; border: 1px solid #00d2ff; }
+    .btn-start:hover { background: #00d2ff; color: #0a0e17; }
+
+    /* Battery Badge */
+    .battery-pill { padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: bold; }
+    .bat-high { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+    .bat-med { background: rgba(255, 200, 0, 0.2); color: #ffc800; }
+    .bat-low { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
+
+    /* Search Inputs Styling */
+    .search-control {
+        background: rgba(0,0,0,0.3);
+        border: 1px solid var(--glass-border);
+        color: white;
+        padding: 10px 15px;
+        border-radius: 8px;
+        width: 100%;
+        outline: none;
+        font-family: 'Outfit', sans-serif;
+    }
+    .search-control:focus { border-color: var(--primary); }
+    .search-btn {
+        background: linear-gradient(135deg, var(--secondary), var(--primary));
+        color: white; border: none; padding: 10px 25px; border-radius: 25px;
+        font-weight: 600; cursor: pointer; transition: transform 0.2s;
+    }
+    .search-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3); }
+    .reset-btn {
+        background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted);
+        padding: 10px 25px; border-radius: 25px; font-weight: 600; cursor: pointer; transition: 0.2s;
+    }
+    .reset-btn:hover { border-color: white; color: white; }
+</style>
+
+<section>
+    <div class="glass-card wide-layout" style="height: 85vh; display: flex; flex-direction: column; overflow: hidden; padding: 0;">
+        
+        <!-- Header -->
+        <div style="padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-satellite-dish" style="color: var(--primary); font-size: 1.2rem;"></i>
+                <h2 style="font-size: 1.2rem; margin: 0;">Device Telemetry Stream</h2>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div id="statusBadge" class="status-badge">
+                    <span class="status-dot"></span>
+                    <span id="statusText">CONNECTING...</span>
+                </div>
+                <button id="btnToggle" class="btn-toggle-stream btn-stop">
+                    <i class="fa-solid fa-pause"></i> STOP STREAM
+                </button>
+            </div>
+        </div>
+
+        <!-- SEARCH BAR SECTION -->
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.15);">
+            <div style="display: flex; justify-content: center; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap;">
+                <!-- Dropdown -->
+                <div style="flex: 0 1 250px;">
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px;">Search By</label>
+                    <select id="searchKey" class="search-control">
+                        <option value="all">Show All</option>
+                        <option value="Shipment_Number">Shipment Number</option>
+                        <option value="Device">Device ID</option>
+                    </select>
+                </div>
+                <!-- Input -->
+                <div style="flex: 0 1 300px;">
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px;">Search Value</label>
+                    <input id="searchValue" type="text" class="search-control" placeholder="Enter ID to filter stream...">
+                </div>
+                <!-- Buttons -->
+                <div style="display: flex; gap: 10px;">
+                    <button id="btnSearch" class="search-btn"><i class="fa-solid fa-magnifying-glass"></i> SEARCH</button>
+                    <button id="btnReset" class="reset-btn">RESET</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div style="overflow-y: auto; flex: 1; padding: 0; scrollbar-width: thin;">
+            <table style="width: 100%; border-collapse: collapse; font-family: 'Courier New', monospace;">
+                <thead style="background: rgba(23, 30, 48, 0.95); position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--glass-border);">
+                    <tr>
+                        <th style="padding: 1rem; text-align: left; color: var(--text-muted); font-size: 0.85rem;">SHIPMENT</th>
+                        <th style="padding: 1rem; text-align: left; color: var(--text-muted); font-size: 0.85rem;">DEVICE ID</th>
+                        <th style="padding: 1rem; text-align: left; color: var(--text-muted); font-size: 0.85rem;">TEMPERATURE</th>
+                        <th style="padding: 1rem; text-align: left; color: var(--text-muted); font-size: 0.85rem;">Route_Details</th>
+                        <th style="padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">BATTERY</th>
+                        <th style="padding: 1rem; text-align: right; color: var(--text-muted); font-size: 0.85rem;">TIMESTAMP</th>
+                    </tr>
+                </thead>
+                <tbody id="streamBody">
+                    <tr id="empty">
+                        <td colspan="6" style="padding: 4rem; text-align: center; color: var(--text-muted);">
+                            <i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>
+                            Waiting for satellite uplink...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const statusBadge = document.getElementById('statusBadge');
+    const statusText = document.getElementById('statusText');
+    const btnToggle = document.getElementById('btnToggle');
+    const tbody = document.getElementById('streamBody');
+    const empty = document.getElementById('empty');
+    
+    // Search Elements
+    const searchKeyEl = document.getElementById('searchKey');
+    const searchValueEl = document.getElementById('searchValue');
+    const btnSearch = document.getElementById('btnSearch');
+    const btnReset = document.getElementById('btnReset');
+
+    let eventSource = null;
+    let isStreaming = false;
+    
+    // Search State
+    let filterKey = 'all';
+    let filterVal = '';
+
+    function getBatteryClass(val) {
+    // Handle both voltage (2.00V-5.00V) and percentage formats
+    let batteryValue = 0;
+    if (val.includes('V')) {
+        // Convert voltage to approximate percentage (2V=0%, 5V=100%)
+        const voltage = parseFloat(val);
+        batteryValue = Math.max(0, Math.min(100, ((voltage - 2.0) / 3.0) * 100));
+    } else {
+        // Already percentage
+        batteryValue = parseInt(val) || 0;
+    }
+    
+    if(batteryValue > 50) return 'bat-high';
+    if(batteryValue > 20) return 'bat-med';
+    return 'bat-low';
+}
+
+    function renderRow(d) {
+        if(empty) empty.remove();
+        
+        // --- FILTER LOGIC (For New Incoming Data) ---
+        if (filterKey !== 'all' && filterVal !== '') {
+            const dataValue = String(d[filterKey] || '').toLowerCase();
+            // If data doesn't contain search string, skip rendering
+            if (!dataValue.includes(filterVal)) return;
+        }
+        // ---------------------------------------------
+
+        const tr = document.createElement('tr');
+        tr.className = 'stream-row'; // Add class for easy selection later
+        
+        // Add data attributes for filtering existing rows
+        tr.setAttribute('data-Shipment_Number', String(d.Shipment_Number || '').toLowerCase());
+        tr.setAttribute('data-Device', String(d.Device || '').toLowerCase());
+
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        tr.style.background = 'rgba(0, 210, 255, 0.08)'; 
+        tr.style.transition = 'background 0.5s ease';
+        
+        setTimeout(() => tr.style.background = 'transparent', 600);
+
+        tr.innerHTML = `
+            <td style="padding: 1rem; font-weight: 700; color: white;">${d.Shipment_Number || '—'}</td>
+            <td style="padding: 1rem; color: #d1d5db;">${d.Device || '—'}</td>
+            <td style="padding: 1rem; color: white;"><i class="fa-solid fa-temperature-half" style="color:var(--text-muted)"></i> &nbsp;${d.Temperature || '—'}</td>
+            <td style="padding: 1rem; color: white;"><i class="fa-solid fa-location-dot" style="color:var(--text-muted)"></i> &nbsp;${d.Location || '—'}</td>
+            <td style="padding: 1rem; text-align: center;">
+                <span class="battery-pill ${getBatteryClass(d.Battery)}">${d.Battery || '0%'}</span>
+            </td>
+            <td style="padding: 1rem; text-align: right; color: var(--text-muted); font-size: 0.9rem;">
+                ${d.timestamp ? new Date(d.timestamp).toLocaleTimeString() : ''}
+                <div style="font-size:0.75rem">${d.timestamp ? new Date(d.timestamp).toLocaleDateString() : ''}</div>
+            </td>
+        `;
+        
+        tbody.insertBefore(tr, tbody.firstChild);
+        if(tbody.children.length > 100) tbody.removeChild(tbody.lastChild); // Increased buffer slightly
+    }
+
+    function startStream() {
+        if(isStreaming) return;
+        statusBadge.className = 'status-badge active';
+        statusText.textContent = 'LIVE STREAM ACTIVE';
+        btnToggle.innerHTML = '<i class="fa-solid fa-pause"></i> STOP STREAM';
+        btnToggle.className = 'btn-toggle-stream btn-stop';
+
+        eventSource = new EventSource('/events');
+        
+        eventSource.onmessage = (e) => {
+            try { renderRow(JSON.parse(e.data)); } 
+            catch(err) { console.error(err); }
+        };
+
+        eventSource.onerror = () => {
+            if (eventSource.readyState === EventSource.CLOSED) return;
+            statusBadge.className = 'status-badge paused';
+            statusText.textContent = 'RECONNECTING...';
+        };
+        isStreaming = true;
+    }
+
+    function stopStream() {
+        if(!isStreaming) return;
+        if(eventSource) { eventSource.close(); eventSource = null; }
+        isStreaming = false;
+        statusBadge.className = 'status-badge paused';
+        statusText.textContent = 'STREAM PAUSED';
+        btnToggle.innerHTML = '<i class="fa-solid fa-play"></i> START STREAM';
+        btnToggle.className = 'btn-toggle-stream btn-start';
+    }
+
+    // --- SEARCH FUNCTIONS ---
+    function performSearch() {
+        filterKey = searchKeyEl.value;
+        filterVal = searchValueEl.value.trim().toLowerCase();
+
+        // Filter existing rows currently in the table
+        const rows = document.querySelectorAll('.stream-row');
+        rows.forEach(row => {
+            if (filterKey === 'all' || filterVal === '') {
+                row.style.display = ''; // Show all
+            } else {
+                const rowData = row.getAttribute(`data-${filterKey}`);
+                if (rowData && rowData.includes(filterVal)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+    }
+
+    function resetSearch() {
+        searchKeyEl.value = 'all';
+        searchValueEl.value = '';
+        filterKey = 'all';
+        filterVal = '';
+        
+        // Show all hidden rows
+        const rows = document.querySelectorAll('.stream-row');
+        rows.forEach(row => row.style.display = '');
+    }
+
+    // Event Listeners
+    btnToggle.addEventListener('click', () => { if(isStreaming) stopStream(); else startStream(); });
+    
+    // Search Listeners
+    btnSearch.addEventListener('click', performSearch);
+    btnReset.addEventListener('click', resetSearch);
+    // Allow 'Enter' key to search
+    searchValueEl.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); });
+
+    startStream();
+
+    window.addEventListener('beforeunload', () => { if(eventSource) eventSource.close(); });
+</script>
+{% endblock %}
