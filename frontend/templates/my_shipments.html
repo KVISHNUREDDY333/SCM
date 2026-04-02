@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+{% block title %}My Shipments - SCMXpertLite{% endblock %}
+
+{% block content %}
+<style>
+    /* --- WIDE LAYOUT STRATEGY --- */
+    .wide-layout {
+        width: 90vw;
+        max-width: 1920px;
+        margin-left: 50%;
+        transform: translateX(-50%);
+    }
+
+    /* --- Filter Card Styles --- */
+    .filter-card {
+        background: linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), 
+                    url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop');
+        background-size: cover;
+        background-position: center;
+        border: 1px solid var(--glass-border);
+        border-radius: var(--card-radius);
+        padding: 3rem 2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .filter-label {
+        font-size: 1.6rem;
+        font-weight: 600;
+        margin-bottom: 2rem;
+        color: white;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    /* Controls Container */
+    .filter-controls {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .select-wrapper { text-align: left; width: 300px; }
+    .select-label { display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+    
+    /* Input & Select Styles */
+    .filter-input {
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(5px);
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 8px;
+        color: white;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    .filter-input:focus { 
+        border-color: var(--primary); 
+        background: rgba(0, 0, 0, 0.8); 
+        outline: none; 
+        box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
+    }
+    
+    /* Placeholder color */
+    ::placeholder { color: rgba(255, 255, 255, 0.4); }
+
+    .filter-input:disabled {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.3);
+        cursor: not-allowed;
+        border-color: transparent;
+    }
+
+    /* Table Styles */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 1rem;
+    }
+
+    .data-table thead th {
+        background-color: #3b5bdb;
+        color: white;
+        padding: 1.2rem;
+        text-align: left;
+        font-weight: 600;
+        text-transform: capitalize;
+        letter-spacing: 0.5px;
+    }
+
+    .data-table thead th:first-child { border-top-left-radius: 10px; }
+    .data-table thead th:last-child { border-top-right-radius: 10px; }
+
+    .data-table tbody tr {
+        background: rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        transition: background 0.2s;
+    }
+    .data-table tbody tr:hover { background: rgba(255, 255, 255, 0.08); }
+    .data-table td { padding: 1.2rem; color: #cbd5e1; vertical-align: middle; }
+
+    /* --- ACTION BUTTONS --- */
+    .action-container {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    /* Delete Button */
+    .btn-delete {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-delete:hover {
+        background: #ef4444;
+        color: white;
+        transform: scale(1.1);
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    }
+
+    /* New Edit Button */
+    .btn-edit {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-edit:hover {
+        background: #3b82f6;
+        color: white;
+        transform: scale(1.1);
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+    }
+
+    /* --- MODAL STYLES --- */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+        display: none; justify-content: center; align-items: center; z-index: 2000;
+    }
+    .modal-content {
+        background: #0f172a;
+        border: 1px solid rgba(255,255,255,0.1);
+        width: 600px; max-width: 90%;
+        padding: 2rem; border-radius: 16px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .full-col { grid-column: span 2; }
+
+    @media (max-width: 900px) {
+        .wide-layout { width: 95vw; }
+        .filter-controls { flex-direction: column; width: 100%; }
+        .select-wrapper, .btn-primary { width: 100%; }
+        .glass-card { overflow-x: auto; }
+        .data-table { min-width: 900px; } 
+    }
+</style>
+
+<section>
+    
+    <!-- TOP SECTION: Filter -->
+    <div class="filter-card wide-layout">
+        <div class="filter-label">Search Shipments</div>
+        
+        <div class="filter-controls">
+            <div class="select-wrapper">
+                <label class="select-label">Search By (Key)</label>
+                <select id="searchKey" class="filter-input">
+                    <option value="ALL" style="color: var(--primary); font-weight: bold;">Show All Shipments</option>
+                    <option value="Shipment_Number" selected>Shipment Number</option>
+                    <option value="Device">Device Id</option>
+                    <option value="Route_Details">Route</option>
+                    <option value="Goods_Type">Goods Type</option>
+                    <option value="Po_Number">PO Number</option>
+                    <option value="Container_number">Container Number</option>
+                </select>
+            </div>
+
+            <div class="select-wrapper">
+                <label class="select-label">Search Value</label>
+                <input type="text" id="searchValue" class="filter-input" placeholder="Enter value (e.g., SHP-1001)...">
+            </div>
+            
+            <button id="btnSearch" class="btn btn-primary" style="background: #3b5bdb; border: none; padding: 12px 40px; font-size: 1rem; height: 46px; min-width: 150px;">
+                <i class="fa-solid fa-magnifying-glass"></i> SEARCH
+            </button>
+
+            <button id="btnReset" class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px 20px; font-size: 1rem; height: 46px;">
+                RESET
+            </button>
+        </div>
+    </div>
+
+    <!-- BOTTOM SECTION: Data Table -->
+    <div class="glass-card wide-layout" style="padding: 0; overflow: hidden;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Shipment Number</th>
+                    <th>Device Id</th>
+                    <th>Battery</th>
+                    <th>Temp</th>
+                    <th>Route</th>
+                    <th>Expected Delivery</th>
+                    <th>Timestamp</th>
+                    <th style="text-align: center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                        <i class="fa-solid fa-layer-group" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i><br>
+                        Select options and click Search to view results.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</section>
+
+<!-- EDIT MODAL (Hidden by default) -->
+<div id="editModal" class="modal-overlay">
+    <div class="modal-content">
+        <h2 style="color:white; margin-bottom:1rem;">Edit Shipment</h2>
+        <form id="editForm" class="form-grid">
+            <div class="select-wrapper" style="width:100%">
+                <label class="select-label">Shipment Number</label>
+                <input id="edit_Shipment_Number" name="Shipment_Number" type="text" class="filter-input" readonly style="cursor: not-allowed; opacity: 0.6;">
+            </div>
+            <div class="select-wrapper" style="width:100%">
+                <label class="select-label">Device ID</label>
+                <input id="edit_Device" name="Device" type="text" class="filter-input" required>
+            </div>
+            <div class="select-wrapper full-col" style="width:100%">
+                <label class="select-label">Route</label>
+                <input id="edit_Route_Details" name="Route_Details" type="text" class="filter-input" required>
+            </div>
+            <!-- Hidden Fields required for valid Schema update -->
+            <input type="hidden" id="edit_Goods_Type" name="Goods_Type">
+            <input type="hidden" id="edit_Po_Number" name="Po_Number">
+            <input type="hidden" id="edit_NDC_Number" name="NDC_Number">
+            <input type="hidden" id="edit_Serial_Number_of_Goods" name="Serial_Number_of_Goods">
+            <input type="hidden" id="edit_Container_number" name="Container_number">
+            
+            <div class="select-wrapper full-col" style="width:100%">
+                <label class="select-label">Expected Delivery</label>
+                <input id="edit_Expected_Delivery_Date" name="Expected_Delivery_Date" type="datetime-local" class="filter-input" style="color-scheme:dark;" required>
+            </div>
+
+            <div class="full-col" style="display:flex; justify-content:flex-end; gap:10px; margin-top:1rem;">
+                <button type="button" class="btn" style="background:transparent; border:1px solid rgba(255,255,255,0.3); color:white;" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let allShipments = [];
+
+    // 1. Fetch Shipments on Load
+    (async function init() {
+        try {
+            const res = await getJSON('/api/v1/shipments');
+            if(res.ok) {
+                allShipments = await res.json();
+                console.log("Shipments loaded:", allShipments.length);
+            }
+        } catch(e) { console.error("Error loading shipments", e); }
+    })();
+
+    // 2. Handle Dropdown
+    document.getElementById('searchKey').addEventListener('change', function() {
+        const valInput = document.getElementById('searchValue');
+        if (this.value === 'ALL') {
+            valInput.value = '';
+            valInput.disabled = true;
+            valInput.placeholder = 'Click Search to view all';
+        } else {
+            valInput.disabled = false;
+            valInput.placeholder = 'Enter value (e.g., SHP-1001)...';
+        }
+    });
+
+    // 3. Button Listeners
+    document.getElementById('btnSearch').addEventListener('click', performSearch);
+    document.getElementById('searchValue').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') performSearch();
+    });
+    document.getElementById('btnReset').addEventListener('click', () => {
+        document.getElementById('searchValue').value = '';
+        document.getElementById('searchValue').disabled = false;
+        document.getElementById('searchKey').value = "Shipment_Number";
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" style="text-align:center; padding:4rem; color:var(--text-muted);">Select options and click Search to view results.</td></tr>';
+    });
+
+    // 4. Search Logic
+    function performSearch() {
+        const key = document.getElementById('searchKey').value;
+        const val = document.getElementById('searchValue').value.toLowerCase().trim();
+
+        if (key === 'ALL') {
+            renderTable(allShipments);
+            return;
+        }
+
+        if(!val) {
+            alert("Please enter a value to search, or select 'Show All Shipments'.");
+            return;
+        }
+
+        const filteredData = allShipments.filter(item => {
+            const itemValue = String(item[key] || '').toLowerCase();
+            return itemValue.includes(val);
+        });
+
+        renderTable(filteredData);
+    }
+
+    // 5. Render Table (With Edit Button)
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        if(data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:3rem; color: #ff6b6b;">No matching shipments found.</td></tr>';
+            return;
+        }
+
+        data.forEach(s => {
+            let displayRoute = s.Route_Details;
+            let deliveryDate = "N/A";
+            if(s.Expected_Delivery_Date) {
+                const d = new Date(s.Expected_Delivery_Date);
+                deliveryDate = d.toLocaleDateString();
+            }
+            const battery = (Math.random() * (100 - 40) + 40).toFixed(0);
+            const temp = (Math.random() * (25 - 18) + 18).toFixed(1);
+            const time = new Date().toLocaleString(); 
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="color:var(--primary); font-weight:bold;">${s.Shipment_Number}</td>
+                <td style="color:white; font-weight:bold;">${s.Device}</td>
+                <td><span style="background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-size:0.9rem;">${battery}%</span></td>
+                <td>${temp} °C</td>
+                <td>${displayRoute}</td>
+                <td style="color: #69db7c;">${deliveryDate}</td>
+                <td style="font-size:0.9rem;">${time}</td>
+                <td style="text-align: center;">
+                    <div class="action-container">
+                        <!-- EDIT BUTTON -->
+                        <button class="btn-edit" onclick="openEditModal('${s.Shipment_Number}')" title="Edit Shipment">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <!-- DELETE BUTTON -->
+                        <button class="btn-delete" onclick="deleteShipment('${s.Shipment_Number}')" title="Delete Shipment">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // 6. Delete Logic
+    async function deleteShipment(shipmentNumber) {
+        if(!confirm(`Are you sure you want to delete Shipment ${shipmentNumber}?`)) return;
+
+        try {
+            const res = await fetch(`/api/v1/shipments/${shipmentNumber}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' }
+            });
+
+            if(res.ok) {
+                allShipments = allShipments.filter(s => s.Shipment_Number !== shipmentNumber);
+                performSearch();
+            } else { alert("Failed to delete."); }
+        } catch(err) { console.error(err); alert("Connection error."); }
+    }
+
+    // 7. Edit Modal Logic
+    const modal = document.getElementById('editModal');
+
+    function openEditModal(shipmentNum) {
+        const shipment = allShipments.find(s => s.Shipment_Number === shipmentNum);
+        if(!shipment) return;
+
+        // Fill form
+        document.getElementById('edit_Shipment_Number').value = shipment.Shipment_Number;
+        document.getElementById('edit_Device').value = shipment.Device;
+        document.getElementById('edit_Route_Details').value = shipment.Route_Details;
+        
+        // Fill hidden fields to preserve data structure on save
+        document.getElementById('edit_Goods_Type').value = shipment.Goods_Type || "N/A";
+        document.getElementById('edit_Po_Number').value = shipment.Po_Number || "N/A";
+        document.getElementById('edit_NDC_Number').value = shipment.NDC_Number || "N/A";
+        document.getElementById('edit_Serial_Number_of_Goods').value = shipment.Serial_Number_of_Goods || "N/A";
+        document.getElementById('edit_Container_number').value = shipment.Container_number || "N/A";
+
+        // Date format fix
+        if(shipment.Expected_Delivery_Date) {
+            const d = new Date(shipment.Expected_Delivery_Date);
+            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+            document.getElementById('edit_Expected_Delivery_Date').value = d.toISOString().slice(0,16);
+        }
+
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
+    // Handle Edit Submit
+    document.getElementById('editForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const raw = Object.fromEntries(new FormData(e.target).entries());
+        if(raw.Expected_Delivery_Date) raw.Expected_Delivery_Date = new Date(raw.Expected_Delivery_Date).toISOString();
+
+        const shipmentNum = document.getElementById('edit_Shipment_Number').value;
+
+        try {
+            const res = await fetch(`/api/v1/shipments/${shipmentNum}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+                body: JSON.stringify(raw)
+            });
+
+            if(res.ok) {
+                alert('Shipment updated successfully');
+                closeModal();
+                // Reload data silently and refresh table
+                const refresh = await getJSON('/api/v1/shipments');
+                allShipments = await refresh.json();
+                performSearch();
+            } else {
+                alert('Update failed');
+            }
+        } catch(err) { console.error(err); alert('Server error'); }
+    });
+
+    // Close modal on outside click
+    modal.addEventListener('click', (e) => { if(e.target === modal) closeModal(); });
+
+</script>
+{% endblock %}
