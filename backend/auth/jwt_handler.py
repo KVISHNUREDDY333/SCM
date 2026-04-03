@@ -4,10 +4,12 @@ from jose import jwt
 from dotenv import load_dotenv
 import os
 
-load_dotenv
+load_dotenv()
 
-JWT_SECRET = os.getenv("SECRET_KEY")
-JWT_ALGORITHM = os.getenv("ALGORITHM")
+import secrets
+# Use a dynamically generated secret key so that restarting the backend invalidates all existing sessions.
+JWT_SECRET = secrets.token_hex(32)
+JWT_ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
 def token_response(token: str):
     return {"access_token": token,

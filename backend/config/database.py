@@ -1,5 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import certifi
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -7,7 +8,8 @@ load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME = os.getenv("DB_NAME")
 
-client = AsyncIOMotorClient(MONGO_URI)
+# Added tlsCAFile to resolve SSL/TLS connection issues on Windows
+client = AsyncIOMotorClient(MONGO_URI, tlsCAFile=certifi.where())
 database = client[DB_NAME]
 
 # Collections

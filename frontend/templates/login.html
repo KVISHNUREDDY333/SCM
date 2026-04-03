@@ -1,191 +1,456 @@
 {% extends "base.html" %}
-{% block title %}Sign In - SCMXpertLite{% endblock %}
+{% block title %}Authentication - SCMXpertLite{% endblock %}
 
 {% block content %}
 <style>
-    /* --- DARK THEME OVERRIDES FOR LOGIN PAGE --- */
-    .auth-wrapper {
-        min-height: 100vh;
+    /* Perfect Centering Override for login page */
+    .container {
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 20px;
     }
-    .login-card {
+    .auth-wrapper {
         width: 100%;
-        max-width: 420px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .sliding-container {
         background: #101522; /* Deep Dark Blue/Grey */
-        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 16px;
-        padding: 40px;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-        text-align: center;
         position: relative;
         overflow: hidden;
+        width: 1000px;
+        max-width: 100%;
+        min-height: 700px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .login-card h2 {
-        color: #ffffff;
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin-bottom: 5px;
+    
+    .form-container {
+        position: absolute;
+        top: 0;
+        height: 100%;
+        transition: all 0.6s ease-in-out;
+        padding: 40px;
+        overflow-y: auto; /* Handle overflow if form is long */
     }
-    .login-card p.muted {
-        color: #94a3b8;
-        font-size: 0.9rem;
-        margin-bottom: 25px;
+    
+    .form-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 100%;
     }
-    .input-group {
-        margin-bottom: 15px;
-        text-align: left;
+
+    .sign-in-container {
+        left: 0;
+        width: 50%;
+        z-index: 2;
     }
-    .input-field {
-        width: 100%;
-        background-color: #0d1117;
-        border: 1px solid #2d3748;
-        color: #ffffff;
-        padding: 14px 16px;
-        border-radius: 8px;
-        font-size: 0.95rem;
-        transition: all 0.3s ease;
+
+    .sliding-container.right-panel-active .sign-in-container {
+        transform: translateX(100%);
+        opacity: 0;
+        z-index: 1; /* Drop back */
     }
-    .input-field:focus {
-        border-color: #00d2ff;
-        background-color: #121826;
-        box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.1);
-        outline: none;
+
+    .sign-up-container {
+        left: 0;
+        width: 50%;
+        opacity: 0;
+        z-index: 1;
+        visibility: hidden; /* Hide to prevent clicking through */
     }
+
+    .sliding-container.right-panel-active .sign-up-container {
+        transform: translateX(100%);
+        opacity: 1;
+        z-index: 5;
+        visibility: visible;
+        animation: show 0.6s;
+    }
+
+    @keyframes show {
+        0%, 49.99% { opacity: 0; z-index: 1; visibility: hidden; }
+        50%, 100% { opacity: 1; z-index: 5; visibility: visible; }
+    }
+
+    .overlay-container {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 50%;
+        height: 100%;
+        overflow: hidden;
+        transition: transform 0.6s ease-in-out;
+        z-index: 100;
+    }
+
+    .sliding-container.right-panel-active .overlay-container {
+        transform: translateX(-100%);
+    }
+
+    .overlay {
+        background: linear-gradient(135deg, #0e0552e3, #053374);
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center;
+        color: #FFFFFF;
+        position: relative;
+        left: -100%;
+        height: 100%;
+        width: 200%;
+        transform: translateX(0);
+        transition: transform 0.6s ease-in-out;
+    }
+
+    .sliding-container.right-panel-active .overlay {
+        transform: translateX(50%);
+    }
+
+    .overlay-panel {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 0 40px;
+        text-align: center;
+        top: 0;
+        height: 100%;
+        width: 50%;
+        transform: translateX(0);
+        transition: transform 0.6s ease-in-out;
+    }
+
+    .overlay-panel h2 { font-size: 2.2rem; margin-bottom: 10px; font-weight: 700; color: #fff;}
+    .overlay-panel p  { font-size: 1.1rem; line-height: 1.6; margin-bottom: 30px; color: rgba(255,255,255,0.9); }
+
+    .overlay-left {
+        transform: translateX(-20%);
+    }
+
+    .sliding-container.right-panel-active .overlay-left {
+        transform: translateX(0);
+    }
+
+    .overlay-right {
+        right: 0;
+        transform: translateX(0);
+    }
+
+    .sliding-container.right-panel-active .overlay-right {
+        transform: translateX(20%);
+    }
+
+    .panel-header { text-align: center; margin-bottom: 25px; }
+    .panel-header h2 { color: #ffffff; font-size: 1.8rem; font-weight: 700; margin-bottom: 5px; }
+    .panel-header p { color: #94a3b8; font-size: 0.9rem; }
+
+    /* Buttons */
     .btn-auth {
-        width: 100%;
-        padding: 14px;
-        border: none;
-        border-radius: 30px;
+        width: 100%; padding: 14px; border: none; border-radius: 30px;
         background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
-        color: white;
-        font-weight: 700;
-        font-size: 1rem;
-        text-transform: uppercase;
-        cursor: pointer;
-        margin-top: 10px;
-        transition: transform 0.2s, box-shadow 0.2s;
+        color: white; font-weight: 700; font-size: 1rem; text-transform: uppercase;
+        cursor: pointer; margin-top: 10px; transition: transform 0.2s, box-shadow 0.2s;
         box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
     }
-    .btn-auth:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 210, 255, 0.5);
+    .btn-auth:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 210, 255, 0.5); }
+    .btn-auth:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); transform: none; box-shadow: none; }
+
+    .btn-ghost {
+        background: transparent;
+        border: 2px solid #FFFFFF;
+        box-shadow: none;
+        border-radius: 30px;
+        width: auto;
+        padding: 12px 40px;
     }
-    .link-text {
-        color: #00d2ff;
-        font-size: 0.9rem;
-        text-decoration: none;
-        transition: color 0.2s;
+    .btn-ghost:hover { background: rgba(255,255,255,0.1); box-shadow: none; }
+
+    /* Links */
+    .link-text { color: #00d2ff; font-size: 0.9rem; text-decoration: none; transition: color 0.2s; }
+    .link-text:hover { color: #3a7bd5; text-decoration: underline; }
+
+    /* Utilities */
+    .error-msg { color: #ff4b4b; font-size: 0.85rem; margin-top: 10px; min-height: 20px; text-align: center; }
+    .success-msg { color: #00ff88; font-size: 0.85rem; margin-top: 10px; min-height: 20px; text-align: center; }
+    .flex-center { display: flex; justify-content: center; align-items: center; }
+    .text-right { text-align: right; }
+    .mb-15 { margin-bottom: 15px; }
+    .mb-10 { margin-bottom: 10px; }
+    .mt-25 { margin-top: 25px; }
+    .hidden-initially { display: none; }
+    .font-bold { font-weight: 600; }
+    
+    .text-muted-small { color: #94a3b8; font-size: 0.9rem; }
+    .w-full-center { width: 100%; text-align: center; left: 0; }
+    .tooltip-title { margin-bottom: 8px; font-weight: bold; color: white; font-size: 0.85rem; }
+    .match-message { font-size: 0.8rem; height: 1.2rem; margin-bottom: 10px; text-align: right; }
+
+    .divider-section {
+        margin: 20px 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; text-align: center;
     }
-    .link-text:hover {
-        color: #3a7bd5;
-        text-decoration: underline;
+
+    /* Form Fields */
+    .form-group.mb-15 { margin-bottom: 15px; }
+
+    /* --- SIGNUP VALIDATION STYLES (from signup.html) --- */
+    .password-wrapper { position: relative; }
+    .password-toggle {
+        position: absolute; right: 15px; top: 18px;
+        color: var(--text-muted); cursor: pointer; z-index: 10; transition: color 0.3s;
     }
-    .error-msg {
-        color: #ff4b4b;
-        font-size: 0.85rem;
-        margin-top: 10px;
-        min-height: 20px;
+    .password-toggle:hover { color: var(--primary); }
+
+    .form-input.text-invalid { color: #ff4444 !important; border-color: #ff4444 !important; box-shadow: 0 0 8px rgba(255, 68, 68, 0.2); }
+    .form-input.text-valid { color: #00ff88 !important; border-color: #00ff88 !important; box-shadow: 0 0 8px rgba(0, 255, 136, 0.2); }
+
+    .info-wrapper { position: relative; display: flex; justify-content: flex-end; margin-top: -10px; margin-bottom: 15px; }
+    .info-btn { font-size: 0.8rem; color: var(--primary); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--glass-border); transition: 0.3s; }
+    .info-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+
+    .requirements-tooltip {
+        position: absolute; top: 30px; right: 0; width: 260px; background: #0f172a; border: 1px solid var(--glass-border); padding: 15px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); z-index: 100;
+        opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none;
     }
-    .flex-center {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    .bottom-text {
-        margin-top: 20px;
-        color: #94a3b8;
-        font-size: 0.9rem;
+    .info-wrapper:hover .requirements-tooltip { opacity: 1; visibility: visible; transform: translateY(0); pointer-events: auto; }
+
+    .req-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; margin-bottom: 6px; color: var(--text-muted); transition: color 0.3s; }
+    .req-item i { font-size: 10px; }
+    .req-item.valid { color: #00ff88; }
+    .req-item.invalid { color: #ff4444; }
+
+    /* OTP Specific */
+    .otp-message-box { background: rgba(0,210,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #00d2ff; font-size: 0.85rem; text-align: center; }
+    .otp-input-field { text-align: center; letter-spacing: 5px; font-size: 1.1rem; }
+    
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in-anim { animation: fadeIn 0.5s; }
+
+    /* Custom Scrollbar for form containers */
+    .form-container::-webkit-scrollbar { width: 6px; }
+    .form-container::-webkit-scrollbar-track { background: transparent; }
+    .form-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 6px; }
+
+    /* Responsive Logic for Mobile (Under 768px) */
+    .mobile-toggle-link { display: none; }
+    @media (max-width: 768px) {
+        .sliding-container {
+            min-height: initial;
+            overflow: visible;
+            display: flex;
+            flex-direction: column;
+            border: none;
+            background: transparent;
+            box-shadow: none;
+        }
+        .overlay-container { display: none; }
+        .mobile-toggle-link { display: block; }
+        
+        .form-container {
+            position: static;
+            width: 100%;
+            height: auto;
+            opacity: 1;
+            transform: none;
+            transition: none;
+            background: #101522;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+            padding: 30px 20px;
+            visibility: visible;
+        }
+        
+        /* Hide mechanisms based on state */
+        .sliding-container.right-panel-active .sign-in-container { display: none; }
+        .sign-up-container { display: none; }
+        .sliding-container.right-panel-active .sign-up-container { display: block; transform: none; animation: none; opacity: 1; visibility: visible;}
     }
 </style>
 
 <div class="auth-wrapper">
-    <div class="login-card">
+    <div class="sliding-container" id="container">
         
-        <!-- 1. LOGIN CONTAINER -->
-        <div id="login-container">
-            <h2>SCMXpertLite</h2>
-            <p class="muted">Sign in to your account</p>
-            
-            <form id="loginForm">
-                <div class="input-group">
-                    <input name="email" type="email" class="input-field" placeholder="Email Address" required />
+        <!-- ==============================================
+                          SIGN IN PANEL
+        ================================================ -->
+        <div class="form-container sign-in-container">
+            <div class="form-content" id="login-container">
+                <div class="panel-header">
+                    <h2>Welcome Back</h2>
+                    <p>Sign in to your account</p>
                 </div>
-                <div class="input-group">
-                    <input name="password" type="password" class="input-field" placeholder="Password" required />
-                </div>
+                
+                <form id="loginForm">
+                    <div class="form-group mb-15">
+                        <input id="login_email" name="email" type="email" class="form-input" placeholder=" " title="Email Address" required autocomplete="username" readonly onfocus="this.removeAttribute('readonly');" onmousedown="this.removeAttribute('readonly');" />
+                        <label for="login_email" class="form-label">Email Address</label>
+                    </div>
+                    <div class="form-group mb-15">
+                        <input id="login_password" name="password" type="password" class="form-input" placeholder=" " title="Password" required autocomplete="current-password" readonly onfocus="this.removeAttribute('readonly');" onmousedown="this.removeAttribute('readonly');" />
+                        <label for="login_password" class="form-label">Password</label>
+                    </div>
 
-                <div style="text-align: right; margin-bottom: 15px;">
-                    <a href="#" id="showForgot" class="link-text">Forgot password?</a>
-                </div>
+                    <div class="text-right mb-15">
+                        <a href="#" id="showForgot" class="link-text">Forgot password?</a>
+                    </div>
 
-                <div style="margin-bottom: 15px;" class="flex-center">
-                    <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}" data-theme="dark"></div>
-                </div>
+                    <div class="mb-15 flex-center">
+                        <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}" data-theme="dark"></div>
+                    </div>
 
-                <div id="loginMessage" class="error-msg"></div>
+                    <div id="loginMessage" class="error-msg"></div>
+                    <button type="submit" class="btn-auth">Sign In</button>
+                    
+                    <div class="mobile-toggle-link text-center mt-25">
+                        Don't have an account? <a href="#" id="mobile-signup-btn" class="link-text font-bold">Sign Up</a>
+                    </div>
+                </form>
 
-                <button type="submit" class="btn-auth">Sign In</button>
-            </form>
-
-            <div style="margin: 20px 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-                <p class="muted" style="margin-bottom: 10px;">Or continue with</p>
-                <div class="flex-center">
-                    <div id="g_id_signin"></div>
+                <div class="divider-section">
+                    <p class="muted mb-10 text-muted-small">Or instantly sign in with Google</p>
+                    <div class="flex-center">
+                        <div id="g_id_signin_login"></div>
+                    </div>
                 </div>
             </div>
 
-            <p class="bottom-text">
-                Don't have an account? <a href="/signup" class="link-text">Sign Up</a>
-            </p>
+            <!-- FORGOT PASSWORD FLOW -->
+            <div class="form-content hidden-initially disabled" id="forgot-container">
+                <div class="panel-header">
+                    <h2>Reset Password</h2>
+                    <p>Secure Account Recovery</p>
+                </div>
+
+                <form id="step1Form">
+                    <div class="form-group mb-15">
+                        <input id="reset_email" type="email" class="form-input" placeholder=" " title="Registered Email" required />
+                        <label for="reset_email" class="form-label">Registered Email</label>
+                    </div>
+                    <button type="submit" class="btn-auth">Send OTP</button>
+                </form>
+
+                <form id="step2Form" class="hidden-initially fade-in-anim">
+                    <div class="otp-message-box">
+                        OTP sent to your email.
+                    </div>
+                    <div class="form-group mb-15">
+                        <input id="otp_input" type="text" class="form-input otp-input-field" placeholder=" " title="OTP" maxlength="6" required />
+                        <label for="otp_input" class="form-label text-center w-full-center">Enter 6-Digit OTP</label>
+                    </div>
+                    <div class="form-group mb-15">
+                        <input id="new_pass_input" type="password" class="form-input" placeholder=" " title="New Password" minlength="8" required />
+                        <label for="new_pass_input" class="form-label">New Password</label>
+                    </div>
+                    <button type="submit" class="btn-auth">Reset Password</button>
+                </form>
+
+                <div id="forgotMessage" class="error-msg"></div>
+
+                <div class="mt-25 text-center flex-center">
+                    <a href="#" id="showLogin" class="link-text font-bold">
+                        <i class="fa-solid fa-arrow-left"></i> Back to Login
+                    </a>
+                </div>
+            </div>
         </div>
 
-        <!-- 2. FORGOT PASSWORD CONTAINER (Updated for OTP) -->
-        <div id="forgot-container" style="display: none;">
-            <h2>Reset Password</h2>
-            <p class="muted">Secure Account Recovery</p>
-
-            <!-- STEP 1: Request OTP -->
-            <form id="step1Form">
-                <div class="input-group">
-                    <input id="reset_email" type="email" class="input-field" placeholder="Registered Email" required />
+        <!-- ==============================================
+                          SIGN UP PANEL
+        ================================================ -->
+        <div class="form-container sign-up-container">
+            <div class="form-content">
+                <div class="panel-header">
+                    <h2>Create Account</h2>
+                    <p>Initialize a new logistics profile</p>
                 </div>
-                <button type="submit" class="btn-auth">Send OTP</button>
-            </form>
 
-            <!-- STEP 2: Verify OTP (Hidden initially) -->
-            <form id="step2Form" style="display: none; animation: fadeIn 0.5s;">
-                <div style="background: rgba(0,210,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #00d2ff; font-size: 0.85rem;">
-                    OTP sent to your email.
+                <form id="signupForm">
+                    <div class="form-group mb-15">
+                        <input id="signup_username" name="username" type="text" class="form-input" placeholder=" " title="Username" required />
+                        <label for="signup_username" class="form-label">Username</label>
+                    </div>
+
+                    <div class="form-group mb-15">
+                        <input id="signup_email" name="email" type="email" class="form-input" placeholder=" " title="Email Address" required />
+                        <label for="signup_email" class="form-label">Email Address</label>
+                    </div>
+                    
+                    <div class="form-group mb-15 password-wrapper">
+                        <input id="passInput" name="password" type="password" class="form-input" placeholder=" " title="Create Password" required />
+                        <label for="passInput" class="form-label">Create Password</label>
+                        <i class="fa-solid fa-eye password-toggle" id="togglePass"></i>
+                    </div>
+
+                    <div class="info-wrapper">
+                        <div class="info-btn">
+                            <i class="fa-solid fa-circle-info"></i> Password Requirements
+                        </div>
+                        <div class="requirements-tooltip">
+                            <div class="tooltip-title">Must contain:</div>
+                            <div id="req-len" class="req-item"><i class="fa-solid fa-circle"></i> Min 8 characters</div>
+                            <div id="req-upper" class="req-item"><i class="fa-solid fa-circle"></i> 1 Uppercase letter</div>
+                            <div id="req-num" class="req-item"><i class="fa-solid fa-circle"></i> 1 Number</div>
+                            <div id="req-special" class="req-item"><i class="fa-solid fa-circle"></i> 1 Special (@$!%*?&)</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-15 password-wrapper">
+                        <input id="confirmPassInput" name="confirm_password" type="password" class="form-input" placeholder=" " title="Confirm Password" required />
+                        <label for="confirmPassInput" class="form-label">Confirm Password</label>
+                        <i class="fa-solid fa-eye password-toggle" id="toggleConfirm"></i>
+                    </div>
+                    <div id="matchMessage" class="match-message"></div>
+
+                    <div id="signupMessage" class="error-msg mb-10"></div>
+                    
+                    <button id="btnSubmitSignup" type="submit" class="btn-auth" disabled>
+                        REGISTER PROFILE
+                    </button>
+
+                    <div class="mobile-toggle-link text-center mt-25">
+                        Already have an account? <a href="#" id="mobile-signin-btn" class="link-text font-bold">Sign In</a>
+                    </div>
+                </form>
+
+                <div class="divider-section">
+                    <p class="muted mb-10 text-muted-small">Or sign up instantly with</p>
+                    <div class="flex-center">
+                        <div id="g_id_signin_signup"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==============================================
+                        OVERLAY CONTAINER & PANELS
+        ================================================ -->
+        <div class="overlay-container">
+            <div class="overlay">
+                <!-- Left Overlay Panel (Visible when Signup is active, invites to Login) -->
+                <div class="overlay-panel overlay-left">
+                    <h2>Welcome Back!</h2>
+                    <p>To keep connected with us please login with your personal info.</p>
+                    <button class="btn-auth btn-ghost" id="signInGhost">Sign In</button>
                 </div>
                 
-                <div class="input-group">
-                    <input id="otp_input" type="text" class="input-field" placeholder="Enter 6-Digit OTP" maxlength="6" style="text-align: center; letter-spacing: 5px; font-size: 1.1rem;" required />
+                <!-- Right Overlay Panel (Visible when Login is active, invites to Signup) -->
+                <div class="overlay-panel overlay-right">
+                    <h2>Hello, Friend!</h2>
+                    <p>Enter your personal details and start your logistics journey with us.</p>
+                    <button class="btn-auth btn-ghost" id="signUpGhost">Sign Up</button>
                 </div>
-                <div class="input-group">
-                    <input id="new_pass_input" type="password" class="input-field" placeholder="New Password" minlength="8" required />
-                </div>
-
-                <button type="submit" class="btn-auth">Reset Password</button>
-            </form>
-
-            <div id="forgotMessage" class="error-msg"></div>
-
-            <div style="margin-top: 25px;">
-                <a href="#" id="showLogin" class="link-text" style="font-weight: 600;">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Login
-                </a>
             </div>
         </div>
 
     </div>
 </div>
-
-<style>
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-</style>
 {% endblock %}
 
 {% block scripts %}
@@ -193,46 +458,86 @@
 <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
 <script>
-    // --- UI TOGGLES ---
+    // ==========================================
+    // 1. DYNAMIC SLIDING TOGGLE LOGIC
+    // ==========================================
+    const container = document.getElementById('container');
+    const signUpGhostBtn = document.getElementById('signUpGhost');
+    const signInGhostBtn = document.getElementById('signInGhost');
+    const mobileSignUpBtn = document.getElementById('mobile-signup-btn');
+    const mobileSignInBtn = document.getElementById('mobile-signin-btn');
+
+    // Desktop Overlay Toggles
+    signUpGhostBtn.addEventListener('click', () => {
+        container.classList.add("right-panel-active");
+        window.location.hash = "#signup";
+    });
+    
+    signInGhostBtn.addEventListener('click', () => {
+        container.classList.remove("right-panel-active");
+        window.location.hash = "";
+    });
+
+    // Mobile Fallback Toggles
+    mobileSignUpBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        container.classList.add("right-panel-active");
+        window.location.hash = "#signup";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    mobileSignInBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        container.classList.remove("right-panel-active");
+        window.location.hash = "";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Handle initial state if URL has #signup hash
+    window.onload = function() {
+        if(window.location.hash === "#signup") {
+            container.classList.add("right-panel-active");
+        }
+        initGoogleAuth();
+    };
+
+    // Listen to hash changes (e.g., from top base.html nav)
+    window.addEventListener('hashchange', () => {
+        if(window.location.hash === "#signup") {
+            container.classList.add("right-panel-active");
+        } else {
+            container.classList.remove("right-panel-active");
+        }
+    });
+
+    // ==========================================
+    // 2. UI TOGGLES (Login <-> Forgot)
+    // ==========================================
     const loginBox = document.getElementById('login-container');
     const forgotBox = document.getElementById('forgot-container');
-    
-    // Forgot Password Internal Forms
     const step1Form = document.getElementById('step1Form');
     const step2Form = document.getElementById('step2Form');
     
-    const showForgotBtn = document.getElementById('showForgot');
-    const showLoginBtn = document.getElementById('showLogin');
-    
-    const loginMsg = document.getElementById('loginMessage');
-    const forgotMsg = document.getElementById('forgotMessage');
-
-    let resetEmail = ""; // Store email between steps
-
-    // Switch to Forgot Password View
-    showForgotBtn.addEventListener('click', (e) => {
+    document.getElementById('showForgot').addEventListener('click', (e) => {
         e.preventDefault();
         loginBox.style.display = 'none';
-        forgotBox.style.display = 'block';
-        
-        // Reset Forgot Password state
+        forgotBox.classList.remove('hidden-initially');
         step1Form.style.display = 'block';
         step2Form.style.display = 'none';
-        step1Form.reset();
-        step2Form.reset();
-        forgotMsg.textContent = '';
-        loginMsg.textContent = '';
+        step1Form.reset(); step2Form.reset();
+        document.getElementById('forgotMessage').textContent = '';
     });
 
-    // Switch back to Login View
-    showLoginBtn.addEventListener('click', (e) => {
+    document.getElementById('showLogin').addEventListener('click', (e) => {
         e.preventDefault();
-        forgotBox.style.display = 'none';
-        loginBox.style.display = 'block';
-        forgotMsg.textContent = '';
+        forgotBox.classList.add('hidden-initially');
+        loginBox.style.display = 'flex';
     });
 
-    // --- 1. LOGIN LOGIC (Existing) ---
+    // ==========================================
+    // 3. LOGIN LOGIC
+    // ==========================================
+    const loginMsg = document.getElementById('loginMessage');
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         loginMsg.style.color = '#94a3b8';
@@ -251,16 +556,13 @@
         try {
             const res = await fetch('/api/v1/token', {
                 method:'POST', 
-                headers:{
-                    'Content-Type':'application/x-www-form-urlencoded',
-                    'x-recaptcha-token': recaptchaToken 
-                }, 
+                headers:{ 'Content-Type':'application/x-www-form-urlencoded', 'x-recaptcha-token': recaptchaToken }, 
                 body: payload
             });
             const json = await res.json();
             
             if(res.ok) {
-                localStorage.setItem('scm_token', json.access_token);
+                setToken(json.access_token);
                 loginMsg.style.color = '#00ff88';
                 loginMsg.textContent = 'Login Successful! Redirecting...';
                 setTimeout(() => window.location.href = '/dashboard', 800);
@@ -276,9 +578,12 @@
         }
     });
 
-    // --- 2. FORGOT PASSWORD LOGIC (New OTP Flow) ---
-    
-    // Step 1: Request OTP
+    // ==========================================
+    // 4. FORGOT PASSWORD LOGIC
+    // ==========================================
+    let resetEmail = "";
+    const forgotMsg = document.getElementById('forgotMessage');
+
     step1Form.addEventListener('submit', async (e) => {
         e.preventDefault();
         resetEmail = document.getElementById('reset_email').value;
@@ -286,14 +591,8 @@
         forgotMsg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Sending OTP...';
 
         try {
-            const res = await fetch('/api/v1/forgot-password', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({email: resetEmail})
-            });
-            
+            const res = await postJSON('/api/v1/forgot-password', {email: resetEmail}, false);
             if(res.ok) {
-                // Success: Hide Step 1, Show Step 2
                 step1Form.style.display = 'none';
                 step2Form.style.display = 'block';
                 forgotMsg.textContent = ''; 
@@ -301,13 +600,9 @@
                 forgotMsg.style.color = '#ff4b4b';
                 forgotMsg.textContent = 'Failed to send OTP. Try again.';
             }
-        } catch(err) {
-            forgotMsg.style.color = '#ff4b4b';
-            forgotMsg.textContent = 'Network error.';
-        }
+        } catch(err) { forgotMsg.textContent = 'Network error.'; forgotMsg.style.color = '#ff4b4b'; }
     });
 
-    // Step 2: Verify OTP & Reset
     step2Form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const otp = document.getElementById('otp_input').value;
@@ -317,59 +612,143 @@
         forgotMsg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Updating...';
 
         try {
-            const res = await fetch('/api/v1/reset-password', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    email: resetEmail,
-                    otp: otp,
-                    new_password: newPass
-                })
-            });
-            
+            const res = await postJSON('/api/v1/reset-password', { email: resetEmail, otp: otp, new_password: newPass }, false);
             const json = await res.json();
-
             if(res.ok) {
                 forgotMsg.style.color = '#00ff88';
                 forgotMsg.textContent = '✔ Password Reset Successful! Redirecting...';
                 setTimeout(() => {
-                    // Go back to login screen automatically
-                    forgotBox.style.display = 'none';
-                    loginBox.style.display = 'block';
+                    forgotBox.classList.add('hidden-initially');
+                    loginBox.style.display = 'flex';
                     forgotMsg.textContent = '';
                 }, 2000);
             } else {
                 forgotMsg.style.color = '#ff4b4b';
                 forgotMsg.textContent = json.detail || 'Invalid OTP';
             }
-        } catch(err) {
-            forgotMsg.style.color = '#ff4b4b';
-            forgotMsg.textContent = 'Server error during reset.';
+        } catch(err) { forgotMsg.textContent = 'Server error.'; forgotMsg.style.color = '#ff4b4b'; }
+    });
+
+    // ==========================================
+    // 5. SIGNUP LOGIC & PASSWORD VALIDATION
+    // ==========================================
+    const passInput = document.getElementById('passInput');
+    const confirmInput = document.getElementById('confirmPassInput');
+    const btnSubmitSignup = document.getElementById('btnSubmitSignup');
+    const matchMsg = document.getElementById('matchMessage');
+    
+    const reqs = {
+        len: { el: document.getElementById('req-len'), regex: /.{8,}/ },
+        upper: { el: document.getElementById('req-upper'), regex: /[A-Z]/ },
+        num: { el: document.getElementById('req-num'), regex: /\d/ },
+        special: { el: document.getElementById('req-special'), regex: /[@$!%*?&]/ }
+    };
+
+    function setupToggle(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        icon.addEventListener('click', () => {
+            input.setAttribute('type', input.getAttribute('type') === 'password' ? 'text' : 'password');
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+        });
+    }
+    setupToggle('passInput', 'togglePass');
+    setupToggle('confirmPassInput', 'toggleConfirm');
+
+    function checkForm() {
+        const val = passInput.value;
+        const confirmVal = confirmInput.value;
+        const isEmpty = val.length === 0;
+        let allValid = true;
+
+        for (const key in reqs) {
+            const isValid = reqs[key].regex.test(val);
+            const item = reqs[key].el;
+            const icon = item.querySelector('i');
+            
+            item.classList.remove('valid', 'invalid');
+            icon.className = 'fa-solid fa-circle'; 
+            if (isEmpty) { item.style.color = 'var(--text-muted)'; }
+            else if (isValid) { item.classList.add('valid'); icon.className = 'fa-solid fa-check-circle'; }
+            else { item.classList.add('invalid'); icon.className = 'fa-solid fa-circle-xmark'; allValid = false; }
+            if(!isValid) allValid = false;
+        }
+
+        passInput.classList.remove('text-valid', 'text-invalid');
+        if (!isEmpty) { passInput.classList.add(allValid ? 'text-valid' : 'text-invalid'); }
+
+        let matchValid = false;
+        if(confirmVal.length > 0) {
+            if(val === confirmVal) {
+                matchMsg.textContent = "Passwords match"; matchMsg.style.color = "#00ff88";
+                confirmInput.classList.add('text-valid'); confirmInput.classList.remove('text-invalid'); matchValid = true;
+            } else {
+                matchMsg.textContent = "Passwords do not match"; matchMsg.style.color = "#ff4444";
+                confirmInput.classList.add('text-invalid'); confirmInput.classList.remove('text-valid'); matchValid = false;
+            }
+        } else { matchMsg.textContent = ""; confirmInput.classList.remove('text-valid', 'text-invalid'); }
+
+        btnSubmitSignup.disabled = !(allValid && matchValid);
+    }
+
+    passInput.addEventListener('input', checkForm);
+    confirmInput.addEventListener('input', checkForm);
+
+    const signupMsg = document.getElementById('signupMessage');
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if(passInput.value !== confirmInput.value) return;
+
+        const formData = new FormData(e.target);
+        const payload = { username: formData.get('username'), email: formData.get('email'), password: formData.get('password') };
+
+        signupMsg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
+        signupMsg.style.color = "var(--accent)";
+
+        try {
+            const res = await postJSON('/api/v1/signup', payload, false);
+            const json = await res.json();
+            
+            if(res.ok) {
+                setToken(json.access_token);
+                signupMsg.innerHTML = '<span style="color:#00ff88">Success! Redirecting...</span>';
+                setTimeout(() => window.location.href = '/dashboard', 1000);
+            } else { 
+                signupMsg.textContent = json.detail || 'Registration failed';
+                signupMsg.style.color = "#ff4d4d";
+            }
+        } catch(err) { 
+            signupMsg.textContent = 'Connection Error'; signupMsg.style.color = "#ff4d4d";
         }
     });
 
-    // --- GOOGLE SSO ---
-    window.onload = function() {
+    // ==========================================
+    // 6. GOOGLE SSO (Rendered on both sides)
+    // ==========================================
+    function initGoogleAuth() {
         const clientMeta = document.querySelector('meta[name="google-client-id"]');
-        if(clientMeta && google) {
+        if(clientMeta && google && clientMeta.getAttribute('content')) {
             google.accounts.id.initialize({
                 client_id: clientMeta.getAttribute('content'),
                 callback: async (resp) => { 
-                    const res = await fetch('/api/v1/auth/google', {
-                        method: 'POST',
-                        headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({id_token: resp.credential})
-                    });
+                    const res = await postJSON('/api/v1/auth/google', {id_token: resp.credential}, false);
                     if(res.ok) {
                         const j = await res.json();
-                        localStorage.setItem('scm_token', j.access_token);
+                        setToken(j.access_token);
                         window.location.href = '/dashboard';
                     }
                 }
             });
+            // Render on Login Side
             google.accounts.id.renderButton(
-                document.getElementById('g_id_signin'), 
-                { theme:'filled_black', size:'large', shape:'pill', width: '250' }
+                document.getElementById('g_id_signin_login'), 
+                { theme:'filled_black', size:'large', shape:'circle', width: '220', text: 'signin_with' }
+            );
+            // Render on Signup Side
+            google.accounts.id.renderButton(
+                document.getElementById('g_id_signin_signup'), 
+                { theme:'filled_black', size:'large', shape:'circle', width: '220', text: 'signup_with' }
             );
         }
     }

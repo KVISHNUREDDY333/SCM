@@ -63,7 +63,15 @@ def main():
             # Save to MongoDB
             collection.insert_one(data)
             
-            print(f"Saved to DB: {data.get('Shipment_Number')} | {data.get('Route_Details')}")
+            # Check DB count
+            count = collection.count_documents({})
+            
+            print(f"Saved to DB: {data.get('Shipment_Number')} | {data.get('Route_Details')} | Total: {count}")
+            
+            # Wipe if it reaches 555
+            if count >= 555:
+                print("Capacity reached (555). Deleting all records to feed freshly generated shipments...")
+                collection.delete_many({})
             
     except KeyboardInterrupt:
         print("\n Consumer stopped.")

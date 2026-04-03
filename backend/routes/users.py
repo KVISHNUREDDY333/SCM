@@ -232,7 +232,11 @@ async def reset_password(payload: ResetPasswordSchema):
     if record["otp"] != payload.otp:
         raise HTTPException(status_code=400, detail="Invalid OTP")
         
-    if datetime.utcnow() > record["expires_at"]:
+    # Strip timezone info to safely support both offset-naive and aware PyMongo dates
+    now_utc = datetime.utcnow().replace(tzinfo=None)
+    db_expires_at = record["expires_at"].replace(tzinfo=None)
+
+    if now_utc > db_expires_at:
         raise HTTPException(status_code=400, detail="OTP Expired")
 
     # 3. Hash new password

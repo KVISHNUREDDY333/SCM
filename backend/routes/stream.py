@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query, HTTPException
 from fastapi.responses import StreamingResponse
+from backend.auth.jwt_handler import decodeJWT
 from aiokafka import AIOKafkaConsumer
 import asyncio
 import json
@@ -83,17 +84,23 @@ async def event_generator():
                 yield f"data: {json.dumps(mock_data)}\n\n"
 
     except asyncio.CancelledError:
-        print("❌ Client disconnected from stream.")
+        print("Client disconnected from stream.")
     except Exception as e:
-        print(f"❌ Stream error: {e}")
+        print(f"Stream error: {e}")
     finally:
         # Ensure proper cleanup
-        if kafka_available and consumer:
-            await consumer.stop()
+        if consumer is not None:
+            try:
+                await consumer.stop()
+            except Exception as cleanup_err:
+                print(f"Error while stopping consumer: {cleanup_err}")
 
 @router.get("/events")
-async def message_stream():
+async def message_stream(token: str = Query(None)):
     """Endpoint that frontend EventSource connects to."""
+    if not token or not decodeJWT(token):
+        raise HTTPException(status_code=403, detail="Unauthenticated Stream Request")
+        
     return StreamingResponse(
         event_generator(), 
         media_type="text/event-stream",

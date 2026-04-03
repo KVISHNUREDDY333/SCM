@@ -62,65 +62,55 @@ app.include_router(stream.router, tags=["Stream"])
 
 # --- Frontend Page Routes ---
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
-@app.get("/")
-async def serve_index(request: Request):
-    return templates.TemplateResponse("login.html", {
-        "request": request, 
-        "GOOGLE_CLIENT_ID": os.getenv("GOOGLE_CLIENT_ID"),
-        "RECAPTCHA_SITE_KEY": RECAPTCHA_SITE_KEY # <--- Pass this!
-    })
 
 @app.get("/")
 async def serve_index(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
+    return templates.TemplateResponse(request=request, name="login.html", context={
+        "request": request, 
+        "GOOGLE_CLIENT_ID": os.getenv("GOOGLE_CLIENT_ID", ""),
+        "RECAPTCHA_SITE_KEY": RECAPTCHA_SITE_KEY
+    })
 
 @app.get("/signup")
 async def serve_signup(request: Request):
-    return templates.TemplateResponse("signup.html", {"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
+    return templates.TemplateResponse(request=request, name="login.html", context={
+        "request": request, 
+        "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID,
+        "RECAPTCHA_SITE_KEY": RECAPTCHA_SITE_KEY
+    })
 
 @app.get("/dashboard")
 async def serve_dashboard(request: Request):
-    return templates.TemplateResponse("dashboard.html", {"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
+    return templates.TemplateResponse(request=request, name="dashboard.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
 
 @app.get("/create-shipment")
 async def serve_create_shipment(request: Request):
-    return templates.TemplateResponse("create_shipment.html", {"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
-
-# ... existing imports ...
+    return templates.TemplateResponse(request=request, name="create_shipment.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
 
 @app.get("/my-shipments")
 async def serve_my_shipments(request: Request):
-    return templates.TemplateResponse("my_shipments.html", {
+    return templates.TemplateResponse(request=request, name="my_shipments.html", context={
         "request": request, 
-        "GOOGLE_CLIENT_ID": os.getenv("GOOGLE_CLIENT_ID")
+        "GOOGLE_CLIENT_ID": os.getenv("GOOGLE_CLIENT_ID", "")
     })
 
 @app.get("/data-stream")
 async def serve_data_stream(request: Request):
-    return templates.TemplateResponse("data_stream.html", {"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
+    return templates.TemplateResponse(request=request, name="data_stream.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
 
 @app.get("/account")
 async def serve_account(request: Request):
-    return templates.TemplateResponse("account.html", {"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
+    return templates.TemplateResponse(request=request, name="account.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
 
 @app.get("/forgot-password")
 async def serve_forgot_password(request: Request):
-    return templates.TemplateResponse("forgot_password.html", {"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
+    return templates.TemplateResponse(request=request, name="forgot_password.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
 
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc):
-    return templates.TemplateResponse("error.html", {
+    return templates.TemplateResponse(request=request, name="error.html", context={
         "request": request, 
         "error_code": "404", 
         "error_message": "Page Not Found",
         "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID
-    })
-
-@app.get("/")
-async def serve_index(request: Request):
-    # Ensure env variable is loaded
-    client_id = os.getenv("GOOGLE_CLIENT_ID")
-    return templates.TemplateResponse("login.html", {
-        "request": request, 
-        "GOOGLE_CLIENT_ID": client_id
     })

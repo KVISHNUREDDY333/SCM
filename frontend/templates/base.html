@@ -31,7 +31,7 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow-x: hidden;
+            overflow: hidden;
         }
 
         /* --- LIVE NETWORK BACKGROUND --- */
@@ -47,6 +47,7 @@
             display: flex; justify-content: space-between; align-items: center;
             padding: 1rem 2rem;
             background: rgba(10, 14, 23, 0.7);
+            -webkit-backdrop-filter: blur(20px);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--glass-border);
             position: sticky; top: 0; z-index: 100;
@@ -90,8 +91,8 @@
         
         .glass-card {
             background: var(--glass);
-            backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(16px);
             border: 1px solid var(--glass-border);
             border-radius: var(--card-radius);
             padding: 2.5rem;
@@ -212,12 +213,22 @@
         async function postJSON(url, data, auth=true) {
             const headers = {'Content-Type':'application/json'};
             if(auth && getToken()) headers['Authorization'] = 'Bearer ' + getToken();
-            return await fetch(url, {method:'POST', headers, body: JSON.stringify(data)});
+            const res = await fetch(url, {method:'POST', headers, body: JSON.stringify(data)});
+            if (res.status === 401 || res.status === 403) {
+                setToken(null);
+                window.location.replace('/');
+            }
+            return res;
         }
         async function getJSON(url) {
             const headers = {};
             if(getToken()) headers['Authorization'] = 'Bearer ' + getToken();
-            return await fetch(url, {headers});
+            const res = await fetch(url, {headers});
+            if (res.status === 401 || res.status === 403) {
+                setToken(null);
+                window.location.replace('/');
+            }
+            return res;
         }
 
         function updateUI() {
@@ -233,13 +244,27 @@
                 `;
                 document.getElementById('btn-logout').addEventListener('click', () => { setToken(null); window.location.href='/'; });
             } else {
-                nav.innerHTML = `
-                    <a href="/" class="nav-item">Log In</a>
-                    <a href="/signup" class="btn btn-primary">Sign Up</a>
-                `;
+                nav.innerHTML = '';
             }
         }
         document.addEventListener('DOMContentLoaded', updateUI);
+
+        // Prevent Back Button access after logout (BFCache handling)
+        window.addEventListener('pageshow', function(event) {
+            const token = getToken();
+            const publicRoutes = ['/', '/signup', '/forgot-password'];
+            const currentPath = window.location.pathname;
+            
+            // If logged out but trying to view an inner page, redirect to home
+            if (!token && !publicRoutes.includes(currentPath)) {
+                window.location.replace('/');
+            }
+            
+            // If logged in but somehow hit the login page, redirect to dashboard
+            if (token && publicRoutes.includes(currentPath)) {
+                window.location.replace('/dashboard');
+            }
+        });
     </script>
     {% block scripts %}{% endblock %}
 </body>

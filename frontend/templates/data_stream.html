@@ -4,13 +4,42 @@
 
 {% block content %}
 <style>
+    .container {
+        width: 100% !important;
+        max-width: 95% !important;
+    }
     /* --- BREAKOUT STYLE --- */
     .wide-layout {
-        width: 85vw;
-        max-width: 1800px; 
-        margin-left: 50%;
-        transform: translateX(-50%);
+        width: 100%;
     }
+
+    /* Stream Containers */
+    .stream-container-card { height: 85vh; display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+    .stream-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); }
+    .stream-header-left { display: flex; align-items: center; gap: 10px; }
+    .stream-icon { color: var(--primary); font-size: 1.2rem; }
+    .stream-title { font-size: 1.2rem; margin: 0; }
+    .stream-header-right { display: flex; align-items: center; gap: 15px; }
+
+    /* Search Section */
+    .search-section { padding: 1.5rem; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.15); }
+    .search-wrapper { display: flex; justify-content: center; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap; }
+    .search-col-1 { flex: 0 1 250px; }
+    .search-col-2 { flex: 0 1 300px; }
+    .search-label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; }
+    .search-btn-group { display: flex; gap: 10px; }
+
+    /* Table Section */
+    .table-container { overflow-y: auto; flex: 1; padding: 0; }
+    .table-container::-webkit-scrollbar { width: 6px; }
+    .table-container::-webkit-scrollbar-track { background: transparent; }
+    .table-container::-webkit-scrollbar-thumb { background-color: rgba(0, 210, 255, 0.3); border-radius: 4px; }
+    .stream-table { width: 100%; border-collapse: collapse; font-family: 'Courier New', monospace; }
+    .stream-thead { background: rgba(23, 30, 48, 0.95); position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--glass-border); }
+    .stream-th { padding: 1rem; text-align: left; color: var(--text-muted); font-size: 0.85rem; }
+    .stream-th-center { padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+    .stream-th-right { padding: 1rem; text-align: right; color: var(--text-muted); font-size: 0.85rem; }
+    .stream-empty-td { padding: 4rem; text-align: center; color: var(--text-muted); }
 
     /* Status Badge Styling */
     .status-badge {
@@ -66,16 +95,16 @@
 </style>
 
 <section>
-    <div class="glass-card wide-layout" style="height: 85vh; display: flex; flex-direction: column; overflow: hidden; padding: 0;">
+    <div class="glass-card wide-layout stream-container-card">
         
         <!-- Header -->
-        <div style="padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="fa-solid fa-satellite-dish" style="color: var(--primary); font-size: 1.2rem;"></i>
-                <h2 style="font-size: 1.2rem; margin: 0;">Device Telemetry Stream</h2>
+        <div class="stream-header">
+            <div class="stream-header-left">
+                <i class="fa-solid fa-satellite-dish stream-icon"></i>
+                <h2 class="stream-title">Device Telemetry Stream</h2>
             </div>
             
-            <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="stream-header-right">
                 <div id="statusBadge" class="status-badge">
                     <span class="status-dot"></span>
                     <span id="statusText">CONNECTING...</span>
@@ -87,24 +116,24 @@
         </div>
 
         <!-- SEARCH BAR SECTION -->
-        <div style="padding: 1.5rem; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.15);">
-            <div style="display: flex; justify-content: center; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap;">
+        <div class="search-section">
+            <div class="search-wrapper">
                 <!-- Dropdown -->
-                <div style="flex: 0 1 250px;">
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px;">Search By</label>
-                    <select id="searchKey" class="search-control">
+                <div class="search-col-1">
+                    <label class="search-label">Search By</label>
+                    <select id="searchKey" class="search-control" title="Search By">
                         <option value="all">Show All</option>
                         <option value="Shipment_Number">Shipment Number</option>
                         <option value="Device">Device ID</option>
                     </select>
                 </div>
                 <!-- Input -->
-                <div style="flex: 0 1 300px;">
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px;">Search Value</label>
+                <div class="search-col-2">
+                    <label class="search-label">Search Value</label>
                     <input id="searchValue" type="text" class="search-control" placeholder="Enter ID to filter stream...">
                 </div>
                 <!-- Buttons -->
-                <div style="display: flex; gap: 10px;">
+                <div class="search-btn-group">
                     <button id="btnSearch" class="search-btn"><i class="fa-solid fa-magnifying-glass"></i> SEARCH</button>
                     <button id="btnReset" class="reset-btn">RESET</button>
                 </div>
@@ -112,21 +141,21 @@
         </div>
 
         <!-- Table Container -->
-        <div style="overflow-y: auto; flex: 1; padding: 0; scrollbar-width: thin;">
-            <table style="width: 100%; border-collapse: collapse; font-family: 'Courier New', monospace;">
-                <thead style="background: rgba(23, 30, 48, 0.95); position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--glass-border);">
+        <div class="table-container">
+            <table class="stream-table">
+                <thead class="stream-thead">
                     <tr>
-                        <th style="padding: 1rem; text-align: left; color: var(--text-muted); font-size: 0.85rem;">SHIPMENT</th>
-                        <th style="padding: 1rem; text-align: left; color: var(--text-muted); font-size: 0.85rem;">DEVICE ID</th>
-                        <th style="padding: 1rem; text-align: left; color: var(--text-muted); font-size: 0.85rem;">TEMPERATURE</th>
-                        <th style="padding: 1rem; text-align: left; color: var(--text-muted); font-size: 0.85rem;">Route_Details</th>
-                        <th style="padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">BATTERY</th>
-                        <th style="padding: 1rem; text-align: right; color: var(--text-muted); font-size: 0.85rem;">TIMESTAMP</th>
+                        <th class="stream-th">SHIPMENT</th>
+                        <th class="stream-th">DEVICE ID</th>
+                        <th class="stream-th">TEMPERATURE</th>
+                        <th class="stream-th">Route_Details</th>
+                        <th class="stream-th-center">BATTERY</th>
+                        <th class="stream-th-right">TIMESTAMP</th>
                     </tr>
                 </thead>
                 <tbody id="streamBody">
                     <tr id="empty">
-                        <td colspan="6" style="padding: 4rem; text-align: center; color: var(--text-muted);">
+                        <td colspan="6" class="stream-empty-td">
                             <i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>
                             Waiting for satellite uplink...
                         </td>
@@ -155,50 +184,58 @@
     let eventSource = null;
     let isStreaming = false;
     
-    // Search State
+    // Search State & History Cache
     let filterKey = 'all';
     let filterVal = '';
+    
+    // Load history from session cache to survive refreshes
+    let streamCache = JSON.parse(sessionStorage.getItem('scm_stream_cache') || '[]');
 
     function getBatteryClass(val) {
-    // Handle both voltage (2.00V-5.00V) and percentage formats
-    let batteryValue = 0;
-    if (val.includes('V')) {
-        // Convert voltage to approximate percentage (2V=0%, 5V=100%)
-        const voltage = parseFloat(val);
-        batteryValue = Math.max(0, Math.min(100, ((voltage - 2.0) / 3.0) * 100));
-    } else {
-        // Already percentage
-        batteryValue = parseInt(val) || 0;
+        let batteryValue = 0;
+        if (val.includes('V')) {
+            const voltage = parseFloat(val);
+            batteryValue = Math.max(0, Math.min(100, ((voltage - 2.0) / 3.0) * 100));
+        } else {
+            batteryValue = parseInt(val) || 0;
+        }
+        
+        if(batteryValue > 50) return 'bat-high';
+        if(batteryValue > 20) return 'bat-med';
+        return 'bat-low';
     }
-    
-    if(batteryValue > 50) return 'bat-high';
-    if(batteryValue > 20) return 'bat-med';
-    return 'bat-low';
-}
 
-    function renderRow(d) {
+    function renderRow(d, isHistoryLoad = false) {
         if(empty) empty.remove();
         
-        // --- FILTER LOGIC (For New Incoming Data) ---
+        // --- FILTER LOGIC ---
         if (filterKey !== 'all' && filterVal !== '') {
             const dataValue = String(d[filterKey] || '').toLowerCase();
-            // If data doesn't contain search string, skip rendering
             if (!dataValue.includes(filterVal)) return;
         }
-        // ---------------------------------------------
+
+        // --- CACHE LOGIC ---
+        // if this is fresh telemetry, save it to session cache
+        if (!isHistoryLoad) {
+            streamCache.unshift(d);
+            if(streamCache.length > 50) streamCache.pop(); // Keep last 50 points
+            sessionStorage.setItem('scm_stream_cache', JSON.stringify(streamCache));
+        }
 
         const tr = document.createElement('tr');
-        tr.className = 'stream-row'; // Add class for easy selection later
-        
-        // Add data attributes for filtering existing rows
+        tr.className = 'stream-row'; 
         tr.setAttribute('data-Shipment_Number', String(d.Shipment_Number || '').toLowerCase());
         tr.setAttribute('data-Device', String(d.Device || '').toLowerCase());
 
         tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-        tr.style.background = 'rgba(0, 210, 255, 0.08)'; 
-        tr.style.transition = 'background 0.5s ease';
         
-        setTimeout(() => tr.style.background = 'transparent', 600);
+        if (!isHistoryLoad) {
+            tr.style.background = 'rgba(0, 210, 255, 0.08)'; 
+            tr.style.transition = 'background 0.5s ease';
+            setTimeout(() => tr.style.background = 'transparent', 600);
+        } else {
+            tr.style.background = 'transparent';
+        }
 
         tr.innerHTML = `
             <td style="padding: 1rem; font-weight: 700; color: white;">${d.Shipment_Number || '—'}</td>
@@ -215,8 +252,11 @@
         `;
         
         tbody.insertBefore(tr, tbody.firstChild);
-        if(tbody.children.length > 100) tbody.removeChild(tbody.lastChild); // Increased buffer slightly
+        if(tbody.children.length > 100) tbody.removeChild(tbody.lastChild); 
     }
+
+    // Set up cache loading on first start
+    let isFirstStart = true;
 
     function startStream() {
         if(isStreaming) return;
@@ -225,7 +265,14 @@
         btnToggle.innerHTML = '<i class="fa-solid fa-pause"></i> STOP STREAM';
         btnToggle.className = 'btn-toggle-stream btn-stop';
 
-        eventSource = new EventSource('/events');
+        // Load cache into DOM exactly once per tab instance
+        if(isFirstStart && streamCache.length > 0) {
+            isFirstStart = false;
+            // Render oldest first so newest ends up at the top
+            [...streamCache].reverse().forEach(d => renderRow(d, true));
+        }
+
+        eventSource = new EventSource(`/events?token=${getToken()}`);
         
         eventSource.onmessage = (e) => {
             try { renderRow(JSON.parse(e.data)); } 
