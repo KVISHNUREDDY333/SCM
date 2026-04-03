@@ -16,3 +16,6 @@ database = client[DB_NAME]
 user_collection = database.get_collection("users")
 shipment_collection = database.get_collection("shipments")
 otp_collection = database.get_collection("otps")
+audit_collection = database.get_collection("audit_logs")
+broadcast_collection = database.get_collection("broadcasts")
+settings_collection = database.get_collection("app_settings")

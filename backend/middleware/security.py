@@ -2,6 +2,7 @@ from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.base import BaseHTTPMiddleware
 from backend.auth.jwt_handler import decodeJWT
+from backend.config.database import user_collection
 import os
 from dotenv import load_dotenv
 
@@ -19,6 +20,20 @@ class JWTBearer(HTTPBearer):
             return credentials.credentials
         else:
             raise HTTPException(status_code=403, detail="Invalid authorization code.")
+
+# --- Admin Security ---
+class VerifyAdmin(JWTBearer):
+    async def __call__(self, request: Request):
+        token = await super(VerifyAdmin, self).__call__(request)
+        decoded = decodeJWT(token)
+        if not decoded:
+             raise HTTPException(status_code=403, detail="Invalid or expired token.")
+        
+        user = await user_collection.find_one({"email": decoded["email"]})
+        if not user or not user.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Access denied: Admin privileges required")
+            
+        return user
 
 # --- IP Access Control Middleware ---
 class IPAccessMiddleware(BaseHTTPMiddleware):

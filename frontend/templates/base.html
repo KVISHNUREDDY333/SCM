@@ -90,7 +90,7 @@
         .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
 
         /* --- GLASS CARDS --- */
-        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; flex: 1; }
+        .container { max-width: 1600px; margin: 0 auto; padding: 2rem; flex: 1; width: 100%; }
         
         .glass-card {
             background: var(--glass);
@@ -130,6 +130,20 @@
 
         footer { text-align: center; padding: 2rem; border-top: 1px solid var(--glass-border); color: var(--text-muted); font-size: 0.9rem; margin-top: auto;}
 
+        /* --- TOAST NOTIFICATIONS --- */
+        .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+        .toast {
+            background: #0f172a; border: 1px solid var(--primary); color: white;
+            padding: 1rem 1.5rem; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            display: flex; align-items: center; gap: 12px; min-width: 300px;
+            animation: toastIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-left: 6px solid var(--primary);
+        }
+        .toast-broadcast { border-color: var(--accent); border-left-color: var(--accent); }
+        .toast i { font-size: 1.2rem; }
+        @keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes toastOut { to { transform: translateX(100%); opacity: 0; } }
+
         /* Responsive */
         @media(max-width: 768px) {
             .navbar { flex-direction: column; gap: 1rem; }
@@ -141,6 +155,7 @@
 <body>
     <!-- Programmable Background -->
     <canvas id="canvas-bg"></canvas>
+    <div class="toast-container" id="toast-container"></div>
 
     <header class="navbar">
         <a href="/" class="brand"><i class="fa-solid fa-boxes-stacked"></i> SCMXpertLite</a>
@@ -234,23 +249,72 @@
             return res;
         }
 
-        function updateUI() {
+        async function updateUI() {
             const nav = document.getElementById('nav-menu');
-            if(getToken()) {
-                nav.innerHTML = `
-                    <a href="/dashboard" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
-                    <a href="/create-shipment" class="nav-item"><i class="fa-solid fa-plus"></i> Create</a>
-                    <a href="/my-shipments" class="nav-item"><i class="fa-solid fa-truck"></i> Shipments</a>
-                    <a href="/data-stream" class="nav-item"><i class="fa-solid fa-wifi"></i> Stream</a>
-                    <a href="/account" class="nav-item"><i class="fa-solid fa-user-astronaut"></i> Account</a>
-                    <button id="btn-logout" class="btn btn-ghost" style="margin-left:10px">Logout</button>
-                `;
-                document.getElementById('btn-logout').addEventListener('click', () => { setToken(null); window.location.href='/'; });
+            const token = getToken();
+            if(token) {
+                try {
+                    const res = await getJSON('/api/v1/me');
+                    if(res.ok) {
+                        const user = await res.json();
+                        let adminLink = '';
+                        if(user.is_admin) {
+                            adminLink = `<a href="/admin" class="nav-item" style="color:var(--accent); border:1px solid var(--accent);"><i class="fa-solid fa-shield-halved"></i> Admin Panel</a>`;
+                        }
+
+                        nav.innerHTML = `
+                            <a href="/dashboard" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                            <a href="/create-shipment" class="nav-item"><i class="fa-solid fa-plus"></i> Create</a>
+                            <a href="/my-shipments" class="nav-item"><i class="fa-solid fa-truck"></i> Shipments</a>
+                            <a href="/data-stream" class="nav-item"><i class="fa-solid fa-wifi"></i> Stream</a>
+                            <a href="/account" class="nav-item"><i class="fa-solid fa-user-astronaut"></i> Account</a>
+                            ${adminLink}
+                            <button id="btn-logout" class="btn btn-ghost" style="margin-left:10px">Logout</button>
+                        `;
+                        document.getElementById('btn-logout').addEventListener('click', () => { setToken(null); window.location.href='/'; });
+                    }
+                } catch(e) { console.error("UI update failed", e); }
             } else {
                 nav.innerHTML = '';
             }
         }
         document.addEventListener('DOMContentLoaded', updateUI);
+
+        // --- 3. Global Broadcast System & Notifications ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'broadcast' ? 'toast-broadcast' : ''}`;
+            const icon = type === 'broadcast' ? 'fa-bullhorn' : 'fa-circle-info';
+            const color = type === 'broadcast' ? 'var(--accent)' : 'var(--primary)';
+            
+            toast.innerHTML = `
+                <i class="fa-solid ${icon}" style="color:${color}"></i>
+                <div>
+                    <div style="font-size:0.75rem; color:${color}; font-weight:700; text-transform:uppercase;">${type === 'broadcast' ? 'Global Announcement' : 'System Notification'}</div>
+                    <div style="font-size:0.95rem;">${message}</div>
+                </div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'toastOut 0.5s forwards';
+                setTimeout(() => toast.remove(), 500);
+            }, 8000);
+        }
+
+        // Shared Broadcast Listener
+        function initBroadcastListener() {
+            if(!getToken()) return;
+            const source = new EventSource(`/api/v1/events?token=${getToken()}`);
+            source.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if(data.type === 'broadcast') {
+                    showToast(data.content, 'broadcast');
+                }
+            };
+            source.onerror = () => { source.close(); setTimeout(initBroadcastListener, 10000); };
+        }
+        document.addEventListener('DOMContentLoaded', initBroadcastListener);
 
         // Prevent Back Button access after logout (BFCache handling)
         window.addEventListener('pageshow', function(event) {

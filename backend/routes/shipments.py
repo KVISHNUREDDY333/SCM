@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, Depends, HTTPException
 from typing import List
 from backend.models.shipment import ShipmentSchema
-from backend.config.database import shipment_collection
+from backend.config.database import shipment_collection, user_collection
 from backend.middleware.security import JWTBearer
 from backend.auth.jwt_handler import decodeJWT
 
@@ -24,25 +24,38 @@ async def create_shipment(shipment: ShipmentSchema = Body(...), token: str = Dep
     return {"message": "Shipment created successfully"}
 
 @router.get("/shipments", dependencies=[Depends(JWTBearer())])
-async def get_shipments():
+async def get_shipments(token: str = Depends(JWTBearer())):
+    email = get_current_email(token)
+    
+    # Identify if user is admin
+    user = await user_collection.find_one({"email": email})
+    is_admin = user.get("is_admin", False) if user else False
+    
     shipments = []
-    # Fetch all shipments
-    async for shipment in shipment_collection.find():
-        # IMPORTANT: Convert ObjectId to string to prevent JSON errors
+    
+    # 🔹 Logic FIX: Regular users ONLY see their own shipments. 
+    # Admins see everything.
+    query = {} if is_admin else {"created_by": email}
+    
+    async for shipment in shipment_collection.find(query):
         shipment["_id"] = str(shipment["_id"])
         shipments.append(shipment)
+        
     return shipments
 
 @router.delete("/shipments/{shipment_number}", dependencies=[Depends(JWTBearer())])
 async def delete_shipment(shipment_number: str, token: str = Depends(JWTBearer())):
-    email = get_current_email(token)
-    
-    # Verify Ownership
+    # Verify Ownership or Admin Access
     shipment = await shipment_collection.find_one({"Shipment_Number": shipment_number})
     if not shipment:
         raise HTTPException(status_code=404, detail="Shipment not found")
         
-    if shipment.get("created_by") != email:
+    # Check if admin
+    email = get_current_email(token)
+    user = await user_collection.find_one({"email": email})
+    is_admin = user.get("is_admin", False) if user else False
+    
+    if not is_admin and shipment.get("created_by") != email:
         raise HTTPException(status_code=403, detail="You do not have permission to delete this shipment")
 
     result = await shipment_collection.delete_one({"Shipment_Number": shipment_number})
@@ -53,14 +66,17 @@ async def delete_shipment(shipment_number: str, token: str = Depends(JWTBearer()
 
 @router.put("/shipments/{shipment_number}", dependencies=[Depends(JWTBearer())])
 async def update_shipment(shipment_number: str, shipment: ShipmentSchema = Body(...), token: str = Depends(JWTBearer())):
-    email = get_current_email(token)
-    
-    # Verify Ownership
+    # Verify Ownership or Admin Access
     existing_shipment = await shipment_collection.find_one({"Shipment_Number": shipment_number})
     if not existing_shipment:
         raise HTTPException(status_code=404, detail="Shipment not found")
         
-    if existing_shipment.get("created_by") != email:
+    # Check if admin
+    email = get_current_email(token)
+    user = await user_collection.find_one({"email": email})
+    is_admin = user.get("is_admin", False) if user else False
+    
+    if not is_admin and existing_shipment.get("created_by") != email:
         raise HTTPException(status_code=403, detail="You do not have permission to modify this shipment")
 
     # Convert Pydantic model to dict

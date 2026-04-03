@@ -8,6 +8,7 @@ import random
 import uuid
 import datetime
 import os
+from backend.config.database import broadcast_collection
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -59,6 +60,12 @@ async def event_generator():
                     "timestamp": data.get("timestamp", datetime.datetime.now().timestamp())
                 }
                 yield f"data: {json.dumps(formatted_data)}\n\n"
+                
+                # Check for active broadcasts (non-blocking)
+                now = datetime.datetime.now()
+                broadcast = await broadcast_collection.find_one({"expires_at": {"$gt": now}})
+                if broadcast:
+                    yield f"data: {json.dumps({'type': 'broadcast', 'content': broadcast['message']})}\n\n"
         else:
             # --- SIMULATION MODE ---
             routes = ['Newyork,USA', 'Chennai, India', 'Bengaluru, India', 'London,UK']
@@ -82,6 +89,12 @@ async def event_generator():
                 }
                 
                 yield f"data: {json.dumps(mock_data)}\n\n"
+
+                # Check for active broadcasts in simulation mode
+                now = datetime.datetime.now()
+                broadcast = await broadcast_collection.find_one({"expires_at": {"$gt": now}})
+                if broadcast:
+                    yield f"data: {json.dumps({'type': 'broadcast', 'content': broadcast['message']})}\n\n"
 
     except asyncio.CancelledError:
         print("Client disconnected from stream.")

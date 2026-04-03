@@ -1,0 +1,922 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard - SCMXpertLite{% endblock %}
+
+{% block content %}
+<style>
+    .admin-container {
+        display: flex;
+        flex-direction: column;
+        gap: 3rem;
+        width: 100%;
+        max-width: 100%;
+        padding: 0; /* Let base.html handle outer padding or override it */
+        margin: 0;
+    }
+
+    /* --- STAT CARDS --- */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+    .stat-card {
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--card-radius);
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary);
+    }
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        background: rgba(0, 210, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: var(--primary);
+    }
+    .stat-info h3 { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .stat-val { font-size: 2rem; font-weight: 700; color: white; margin-top: 0.2rem; }
+
+    /* --- EMERGENCY ALERTS --- */
+    .alerts-section {
+        background: rgba(239, 68, 68, 0.05);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: var(--card-radius);
+        padding: 1.5rem;
+    }
+    .alerts-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; color: #ff4b4b; font-weight: bold; }
+    .alerts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+    .alert-item {
+        background: rgba(0,0,0,0.4);
+        padding: 1rem;
+        border-left: 4px solid #ff4b4b;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        animation: pulseAlert 2s infinite;
+    }
+    @keyframes pulseAlert {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    @keyframes radarPulse {
+        0% { transform: scale(0.95); opacity: 0.5; }
+        50% { transform: scale(1); opacity: 1; }
+        100% { transform: scale(0.95); opacity: 0.5; }
+    }
+    .radar-icon {
+        font-size: 2rem; color: var(--primary); margin-bottom: 1rem;
+        animation: radarPulse 2s ease-in-out infinite;
+    }
+    .scanning-text {
+        font-family: monospace; font-size: 0.8rem; color: var(--primary);
+        letter-spacing: 2px; text-transform: uppercase;
+    }
+    .scanning-sub { margin-top: 10px; color: var(--text-muted); font-size: 0.8rem; }
+
+    /* --- TABLES --- */
+    .admin-section {
+        background: var(--glass);
+        border-radius: var(--card-radius);
+        padding: 2rem;
+        border: 1px solid var(--glass-border);
+    }
+    .section-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
+    
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { text-align: left; padding: 1rem; border-bottom: 1px solid var(--glass-border); color: var(--text-muted); font-weight: 500; font-size: 0.85rem; text-transform: uppercase; }
+    .data-table td { padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.03); color: #cbd5e1; font-size: 0.95rem; }
+    .data-table tr:hover { background: rgba(255,255,255,0.02); }
+
+    /* --- TACTICAL REFINEMENTS --- */
+    .tactical-actions-bar {
+        background: rgba(245, 158, 11, 0.05);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-radius: var(--card-radius);
+        padding: 1.5rem;
+    }
+    .tactical-header {
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: #f59e0b;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+
+    .stats-row {
+        display: flex;
+        gap: 1.5rem;
+    }
+    .stats-row .stat-card {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .tag { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .tag-admin { background: rgba(248, 155, 41, 0.15); color: var(--accent); }
+    .tag-user { background: rgba(0, 210, 255, 0.15); color: var(--primary); }
+    
+    .btn-sm-del { background: rgba(255, 75, 75, 0.15); color: #ff4b4b; border: 1px solid rgba(255,75,75,0.3); padding: 5px; border-radius: 6px; cursor: pointer; transition: 0.3s; }
+    .btn-sm-del:hover { background: #ff4b4b; color: white; }
+
+    .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); font-style: italic; }
+
+    /* Layout Splits */
+    .admin-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+    @media (max-width: 1000px) { 
+        .admin-grid { grid-template-columns: 1fr; }
+        .admin-top-flex { flex-direction: column; align-items: stretch; gap: 1rem; }
+        .header-controls { justify-content: space-between; flex-wrap: wrap; }
+    }
+    
+    /* --- PROFESSIONAL ENHANCEMENTS --- */
+    .system-status-bar {
+        display: flex; gap: 1.5rem; background: rgba(255,255,255,0.02);
+        padding: 0.8rem 1.5rem; border-radius: 50px; border: 1px solid var(--glass-border);
+        align-items: center; margin-bottom: 2rem; width: fit-content;
+    }
+    .status-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; }
+    .status-pip { width: 10px; height: 10px; border-radius: 50%; background: #ccc; box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+    .status-online { background: #10b981; box-shadow: 0 0 12px rgba(16, 185, 129, 0.5); }
+    .status-offline { background: #ef4444; box-shadow: 0 0 12px rgba(239, 68, 68, 0.5); }
+
+    .activity-ticker {
+        background: rgba(0,0,0,0.4); border-radius: 12px; padding: 1rem;
+        margin-bottom: 2rem; border-left: 3px solid var(--primary);
+    }
+    .ticker-title { font-size: 0.75rem; color: var(--primary); text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
+    .ticker-content { font-size: 0.9rem; color: #cbd5e1; height: 1.2rem; overflow: hidden; display: flex; align-items: center; }
+
+    /* Button variants */
+    .btn-action { width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.3s; color: white; display: inline-flex; align-items: center; justify-content: center; }
+    .btn-promote { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .btn-promote:hover { background: #10b981; color: white; }
+    .btn-demote { background: rgba(248, 155, 41, 0.1); color: var(--accent); }
+    .btn-demote:hover { background: var(--accent); color: white; }
+    .btn-edit-usr { background: rgba(58, 123, 213, 0.1); color: var(--secondary); }
+    .btn-edit-usr:hover { background: var(--secondary); color: white; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 2000; }
+    .modal-card { background: #0f172a; border: 1px solid rgba(255,255,255,0.1); width: 500px; padding: 1.5rem 2rem; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    .modal-shipment { width: 1200px; max-height: none; overflow-y: visible; }
+    .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; }
+    .full-col { grid-column: span 3; }
+    .form-group { margin-bottom: 0.5rem; position: relative; }
+    .form-label { 
+        display: block !important; 
+        position: static !important; 
+        font-size: 0.85rem; 
+        color: var(--text-muted); 
+        margin-bottom: 8px; 
+        pointer-events: auto !important;
+        transform: none !important;
+    }
+    .form-input { 
+        width: 100%; 
+        padding: 12px 15px; 
+        background: rgba(255,255,255,0.05); 
+        border: 1px solid rgba(255,255,255,0.1); 
+        border-radius: 8px; 
+        color: white; 
+        font-size: 1rem;
+    }
+    .form-input:focus { border-color: var(--primary); outline: none; }
+    .modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem; }
+    .modal-card h2 { margin-bottom: 1.5rem; }
+    .global-edit-title { color: var(--primary); }
+    .input-disabled-look { opacity: 0.5; }
+    .input-date-dark { color-scheme: dark; }
+    .form-textarea { height: 60px; resize: vertical; }
+    
+    /* --- INLINE STYLE REPLACEMENTS --- */
+    .admin-header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .admin-header p { color: var(--text-muted); }
+    .table-responsive { overflow-x: auto; }
+
+    /* Admin specific JS-injected styles */
+    .user-info-name { font-weight: 600; color: white; }
+    .user-info-email { font-size: 0.8rem; color: var(--text-muted); }
+    .shipment-num-admin { color: var(--primary); font-weight: bold; }
+    .shipment-info-admin { font-size: 0.85rem; }
+    
+    
+    /* FIX: Allow vertical scrolling specifically for Admin Panel */
+    html, body {
+        overflow-y: auto !important;
+        height: auto !important;
+    }
+
+    /* Custom Admin Scrollbar */
+    body::-webkit-scrollbar { width: 8px; }
+    body::-webkit-scrollbar-track { background: var(--bg-deep); }
+    body::-webkit-scrollbar-thumb { 
+        background: linear-gradient(var(--secondary), var(--primary)); 
+        border-radius: 10px; 
+        border: 2px solid var(--bg-deep);
+    }
+
+    /* --- LAYOUT UTILITIES --- */
+    .admin-top-flex { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
+    .header-controls { display: flex; gap: 1rem; align-items: center; }
+    .maint-label { font-size: 0.8rem; font-weight: 600; }
+    .color-primary { color: var(--primary); }
+    
+    .shipment-actions-flex { display: flex; gap: 8px; }
+    .edit-usr-email-readonly { opacity: 0.5; }
+
+    /* --- ENTERPRISE TABS --- */
+    .admin-tabs { 
+        display: flex; 
+        gap: 0.5rem; 
+        margin-bottom: 2rem; 
+        border-bottom: 1px solid var(--glass-border); 
+        padding-bottom: 0.5rem;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    .tab-btn { 
+        background: transparent; 
+        border: none; 
+        color: var(--text-muted); 
+        font-size: 0.9rem; 
+        font-weight: 600; 
+        cursor: pointer; 
+        padding: 10px 18px; 
+        border-radius: 12px; 
+        transition: 0.3s; 
+        display: flex; 
+        align-items: center; 
+        gap: 8px;
+        flex-shrink: 0;
+    }
+    .tab-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+    .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.4s ease-out; }
+    
+    /* --- UTILITIES & FIT --- */
+    .mb-3 { margin-bottom: 3rem !important; }
+    .mt-3 { margin-top: 3rem !important; }
+    .w-100 { width: 100% !important; }
+    
+    .hide-scrollbar {
+        -ms-overflow-style: none; /* IE/Edge */
+    }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+
+    /* --- MAINTENANCE TOGGLE --- */
+    .maint-mode-card { display: flex; align-items: center; gap: 15px; padding: 0.5rem 1.2rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 50px; }
+    .maint-mode-card.active { background: #ef4444; color: white; border-color: #ef4444; }
+    .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #10b981; }
+    input:checked + .slider:before { transform: translateX(22px); }
+
+    /* --- EXPORT & BROADCAST --- */
+    .enterprise-actions { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .btn-ent { padding: 10px 20px; border-radius: 10px; font-weight: 600; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: white; cursor: pointer; transition: 0.3s; }
+    .btn-ent:hover { background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+    .btn-broadcast { border-color: #f59e0b; color: #f59e0b; }
+    .btn-broadcast:hover { background: #f59e0b; color: white; }
+    
+    .audit-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .audit-table th { background: rgba(0,0,0,0.2); }
+    .audit-action-tag { padding: 2px 8px; border-radius: 4px; font-weight: bold; background: rgba(255,255,255,0.1); }
+    
+    /* --- UTILITIES --- */
+    .modal-info-text { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+    .ticker-timestamp { color: var(--primary); font-family: monospace; font-weight: bold; }
+    .btn-blue-glass { background: rgba(59, 130, 246, 0.1) !important; color: #3b82f6 !important; }
+    .btn-blue-glass:hover { background: #3b82f6 !important; color: white !important; }
+    
+    .chart-container { 
+        background: rgba(0,0,0,0.3); 
+        padding: 1.5rem; 
+        border-radius: 16px; 
+        border: 1px solid var(--glass-border); 
+        height: min(400px, 60vh); 
+        position: relative; 
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+</style>
+
+<div class="admin-container">
+    <div class="admin-top-flex">
+        <div class="panel-header admin-header">
+            <h1><i class="fa-solid fa-screwdriver-wrench"></i> System Command Center</h1>
+            <p>Global oversight and infrastructure monitoring</p>
+        </div>
+
+        <div class="header-controls">
+            <div class="maint-mode-card" id="maint-status-card">
+                <span class="maint-label" id="maint-label-text"><i class="fa-solid fa-lock"></i> MAINTENANCE MODE</span>
+                <label class="switch" for="maint-toggle">
+                    <input type="checkbox" id="maint-toggle" onchange="toggleMaintenanceMode()" title="Toggle Global Maintenance Mode">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="system-status-bar">
+                <div class="status-item">
+                    <div class="status-pip" id="pip-db"></div> DB: <span id="text-db">Checking...</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-pip" id="pip-kafka"></div> KAFKA: <span id="text-kafka">Checking...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ENTERPRISE TAB NAVIGATION -->
+    <div class="admin-tabs hide-scrollbar">
+        <button class="tab-btn active" onclick="switchTab('tab-users', this)"><i class="fa-solid fa-users"></i> Users Control (Command Center)</button>
+        <button class="tab-btn" onclick="switchTab('tab-shipments', this)"><i class="fa-solid fa-earth-americas"></i> Global Shipments (Shipment Master)</button>
+        <button class="tab-btn" onclick="switchTab('tab-analytics', this)"><i class="fa-solid fa-chart-line"></i> Business Analytics (Growth Suite)</button>
+        <button class="tab-btn" onclick="switchTab('tab-audit', this)"><i class="fa-solid fa-shield-halved"></i> Security Audit (Anomaly Radar)</button>
+    </div>
+
+
+    <!-- TAB 1: USERS -->
+    <div id="tab-users" class="tab-content active">
+        <div class="tactical-actions-bar mb-3">
+            <div class="tactical-header">
+                <i class="fa-solid fa-terminal"></i> Broadcast Engine
+            </div>
+            <div class="enterprise-actions">
+                <button class="btn-ent btn-broadcast" onclick="openBroadcastModal()"><i class="fa-solid fa-bullhorn"></i> Global Announcement Broadcast</button>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <div class="section-title"><i class="fa-solid fa-user-gear color-primary"></i> Registry Control</div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead><tr><th>Administrative Identity</th><th>Access Tier</th><th>Last Mission Log</th><th>Command Action</th></tr></thead>
+                    <tbody id="user-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: GLOBAL SHIPMENTS (Shipment Master) -->
+    <div id="tab-shipments" class="tab-content">
+        <!-- LIVE AGGREGATION METRICS -->
+        <div class="stats-row mb-3" id="stats-container">
+            <div class="stat-card">
+                 <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                 <div class="stat-info"><h3>Total Users</h3><div class="stat-val" id="val-users">--</div></div>
+            </div>
+            <div class="stat-card">
+                 <div class="stat-icon"><i class="fa-solid fa-box-open"></i></div>
+                 <div class="stat-info"><h3>Total Active Shipments</h3><div class="stat-val" id="val-shipments">--</div></div>
+            </div>
+            <div class="stat-card">
+                 <div class="stat-icon"><i class="fa-solid fa-microchip"></i></div>
+                 <div class="stat-info"><h3>Active Devices (via Kafka)</h3><div class="stat-val" id="val-devices">--</div></div>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <div class="section-title"><i class="fa-solid fa-earth-americas color-primary"></i> Global Master Registry (Shipment Master)</div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead><tr><th>Number</th><th>Creator</th><th>Route</th><th>Master Override / Purge</th></tr></thead>
+                    <tbody id="shipment-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: BUSINESS ANALYTICS (Growth Suite) -->
+    <div id="tab-analytics" class="tab-content">
+
+        <div class="enterprise-actions mb-3">
+            <button class="btn-ent" onclick="exportData('shipments')"><i class="fa-solid fa-file-csv"></i> Intelligence Export (CSV Master)</button>
+        </div>
+
+        <div class="admin-section">
+            <div class="section-title"><i class="fa-solid fa-chart-pie color-primary"></i> Trend Visualizer (14-Day Overlook)</div>
+            <div class="chart-container">
+                <canvas id="trendsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: SECURITY AUDIT (Anomaly Radar) -->
+    <div id="tab-audit" class="tab-content">
+        <!-- LIVE SYSTEM EVENTS FEED -->
+        <div class="activity-ticker mb-3">
+            <div class="ticker-title">Live System Events</div>
+            <div class="ticker-content" id="activity-logs">Initializing security audit feed...</div>
+        </div>
+
+        <div class="admin-section">
+            <div class="section-title"><i class="fa-solid fa-shield-halved color-primary"></i> Audit Trail</div>
+            <div class="table-responsive">
+                <table class="data-table audit-table">
+                    <thead><tr><th>Admin Agent</th><th>Logged Action</th><th>Event Details</th><th>Timestamp</th></tr></thead>
+                    <tbody id="audit-log-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- REUSE MODAL HTML from my_shipments for Edit -->
+<div id="userEditModal" class="modal-overlay">
+    <div class="modal-card">
+        <h2><i class="fa-solid fa-user-pen"></i> Edit User Profile</h2>
+        <form id="userEditForm">
+            <input type="hidden" id="edit-user-id">
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" id="edit-user-name" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email (Read Only)</label>
+                <input type="text" id="edit-user-email" class="form-input edit-usr-email-readonly" readonly>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-ghost" onclick="closeUserModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- GLOBAL SHIPMENT EDIT MODAL -->
+<div id="shipmentEditModal" class="modal-overlay">
+    <div class="modal-card modal-shipment">
+        <h2><i class="fa-solid fa-box-archive"></i> <span class="global-edit-title">Global Shipment Override</span></h2>
+        <form id="shipmentEditForm" class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Shipment Number (Read Only)</label>
+                <input id="edit_Shipment_Number" name="Shipment_Number" type="text" class="form-input input-disabled-look" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Device ID</label>
+                <input id="edit_Device" name="Device" type="text" class="form-input" required>
+            </div>
+            <div class="form-group full-col">
+                <label class="form-label">Standardized Route Selection</label>
+                <select id="edit_Route_Details" name="Route_Details" class="form-input color-scheme-dark" required>
+                    <option value="" disabled selected>Select Global Route</option>
+                    <option>Newyork, USA → Chennai, India</option>
+                    <option>Chennai, India → Newyork, USA</option>
+                    <option>Chennai, India → London, UK</option>
+                    <option>Bengaluru, India → Newyork, USA</option>
+                    <option>London, UK → Chennai, India</option>
+                    <option>Newyork, USA → London, UK</option>
+                    <option>Bengaluru, India → London, UK</option>
+                    <option>Newyork, USA → Bengaluru, India</option>
+                    <option>Chennai, India → Bengaluru, India</option>
+                    <option>London, UK → Bengaluru, India</option>
+                    <option>Bengaluru, India → Chennai, India</option>
+                    <option>London, UK → Newyork, USA</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Goods Type</label>
+                <input id="edit_Goods_Type" name="Goods_Type" type="text" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Container Number</label>
+                <input id="edit_Container_number" name="Container_number" type="text" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">PO Number</label>
+                <input id="edit_Po_Number" name="Po_Number" type="text" class="form-input" required>
+            </div>
+             <div class="form-group">
+                <label class="form-label">NDC Number</label>
+                <input id="edit_NDC_Number" name="NDC_Number" type="text" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Serial Number</label>
+                <input id="edit_Serial_Number_of_Goods" name="Serial_Number_of_Goods" type="text" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Expected Delivery</label>
+                <input id="edit_Expected_Delivery_Date" name="Expected_Delivery_Date" type="datetime-local" class="form-input input-date-dark" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Batch ID (Optional)</label>
+                <input id="edit_Batch_ID" name="Batch_ID" type="text" class="form-input">
+            </div>
+            <div class="form-group full-col">
+                <label class="form-label">Shipment Description</label>
+                <textarea id="edit_Shipment_Description" name="Shipment_Description" class="form-input form-textarea"></textarea>
+            </div>
+
+            <div class="full-col modal-foot">
+                <button type="button" class="btn btn-ghost" onclick="closeShipmentModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Global Override</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- GLOBAL BROADCAST MODAL -->
+<div id="broadcastModal" class="modal-overlay">
+    <div class="modal-card">
+        <h2><i class="fa-solid fa-bullhorn color-primary"></i> Send Global Announcement</h2>
+        <p class="modal-info-text">This message will appear on every active logistics dashboard instantly.</p>
+        <form id="broadcastForm">
+            <div class="form-group">
+                <label class="form-label">Broadcast Message</label>
+                <textarea id="broadcast-msg" class="form-input form-textarea" placeholder="e.g. System maintenance scheduled for 10 PM."></textarea>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-ghost" onclick="closeBroadcastModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Transmit Now</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    /* MODIFIER: FOR ADMIN ONLY, OVERRIDE BASE CONTAINER PADDING FOR TRUE WIDESCREEN */
+    document.addEventListener('DOMContentLoaded', () => {
+        const mainContainer = document.querySelector('main.container');
+        if(mainContainer) {
+            mainContainer.style.maxWidth = '100vw';
+            mainContainer.style.padding = '1.5rem 3rem';
+        }
+    });
+
+    let trendsChart = null;
+    let currentUserEmail = "";
+
+    // 0. System Health Check
+    async function checkHealth() {
+        try {
+            const res = await getJSON('/api/v1/admin/system-health');
+            if(res.ok) {
+                const data = await res.json();
+                updatePip('db', data.database);
+                updatePip('kafka', data.kafka);
+                updateMaintUI(data.maintenance);
+            }
+        } catch(e) { console.error("Health check failed"); }
+    }
+
+    function updatePip(id, status) {
+        const pip = document.getElementById(`pip-${id}`);
+        const text = document.getElementById(`text-${id}`);
+        if(!pip || !text) return;
+        text.textContent = status;
+        pip.className = 'status-pip ' + (status === 'Online' ? 'status-online' : 'status-offline');
+    }
+
+    // Enterprise Tab Switching
+    function switchTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        btn.classList.add('active');
+
+        // State-Aware Data Refresh
+        if(id === 'tab-users') loadUsers();
+        if(id === 'tab-shipments') { loadGlobalShipments(); loadStats(); }
+        if(id === 'tab-analytics') loadTrends();
+        if(id === 'tab-audit') loadAuditLogs();
+    }
+
+    // Maintenance Toggle
+    async function toggleMaintenanceMode() {
+        const toggle = document.getElementById('maint-toggle');
+        const isActive = toggle.checked;
+        const res = await fetch('/api/v1/admin/maintenance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+            body: JSON.stringify({ is_active: isActive })
+        });
+        if(res.ok) {
+            addLog(`System Maintenance Mode ${isActive ? 'ACTIVATED' : 'DEACTIVATED'}`);
+            updateMaintUI(isActive);
+        }
+    }
+
+    function updateMaintUI(isActive) {
+        const card = document.getElementById('maint-status-card');
+        card.classList.toggle('active', isActive);
+        document.getElementById('maint-toggle').checked = isActive;
+    }
+
+    async function checkMaintenanceStatus() {
+         // This can be checked occasionally or pulled on load
+    }
+
+    // Business Reports Export
+    function exportData(type) {
+        window.location.href = `/api/v1/admin/export/${type}?token=${getToken()}`;
+        addLog(`Initiated CSV export for global ${type} data.`);
+    }
+
+    // Broadcast System
+    function openBroadcastModal() { document.getElementById('broadcastModal').style.display = 'flex'; }
+    function closeBroadcastModal() { document.getElementById('broadcastModal').style.display = 'none'; }
+    
+    document.getElementById('broadcastForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const msg = document.getElementById('broadcast-msg').value;
+        const res = await fetch('/api/v1/admin/broadcast', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+            body: JSON.stringify({ message: msg, expires_at: new Date(Date.now() + 3600000).toISOString() }) // 1 hour expiry
+        });
+        if(res.ok) {
+            addLog(`Global broadcast transmitted: "${msg}"`);
+            closeBroadcastModal();
+        }
+    }
+
+    // Security Audit Suite
+    async function loadAuditLogs() {
+        const res = await getJSON('/api/v1/admin/audit-logs');
+        if(res.ok) {
+            const logs = await res.json();
+            const tbody = document.getElementById('audit-log-table');
+            tbody.innerHTML = '';
+            logs.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${log.admin_email}</td>
+                    <td><span class="audit-action-tag">${log.action}</span></td>
+                    <td>${log.details}</td>
+                    <td>${new Date(log.timestamp).toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    }
+
+    // Business Analytics Chart
+    async function loadTrends() {
+        const res = await getJSON('/api/v1/admin/stats/trends');
+        if(res.ok) {
+            const data = await res.json();
+            const labels = data.map(d => d.date);
+            const counts = data.map(d => d.count);
+
+            if(trendsChart) trendsChart.destroy();
+            const ctx = document.getElementById('trendsChart').getContext('2d');
+            trendsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Shipment Volume',
+                        data: counts,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    }
+
+    function addLog(msg) {
+        const log = document.getElementById('activity-logs');
+        log.innerHTML = `<span class="ticker-timestamp">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+    }
+
+    // 1. Fetch Stats
+    async function loadStats() {
+        const res = await getJSON('/api/v1/admin/stats');
+        if(res.ok) {
+            const data = await res.json();
+            document.getElementById('val-users').textContent = data.total_users;
+            document.getElementById('val-shipments').textContent = data.total_shipments;
+            document.getElementById('val-devices').textContent = data.active_devices;
+        }
+    }
+
+    // 2. Load Users with Enhanced Controls
+    async function loadUsers() {
+        const res = await getJSON('/api/v1/admin/users');
+        if(res.ok) {
+            const users = await res.json();
+            const tbody = document.getElementById('user-table-body');
+            tbody.innerHTML = '';
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                const lastSeen = u.last_login ? new Date(u.last_login).toLocaleDateString() : 'Never';
+                const roleClass = u.is_admin ? 'tag-admin' : 'tag-user';
+                const roleLabel = u.is_admin ? 'ADMIN' : 'USER';
+                
+                const isMe = u.email === currentUserEmail;
+                const toggleIcon = u.is_admin ? '<i class="fa-solid fa-user-minus"></i>' : '<i class="fa-solid fa-user-plus"></i>';
+                const toggleClass = u.is_admin ? 'btn-demote' : 'btn-promote';
+                const toggleTitle = u.is_admin ? 'Demote to User' : 'Promote to Admin';
+
+                tr.innerHTML = `
+                    <td>
+                        <div class="user-info-name">${u.username}</div>
+                        <div class="user-info-email">${u.email}</div>
+                    </td>
+                    <td><span class="tag ${roleClass}">${roleLabel} ${isMe ? '(Me)' : ''}</span></td>
+                    <td>${lastSeen}</td>
+                    <td>
+                        <div class="user-actions-flex">
+                            <button class="btn-action btn-edit-usr" onclick="openUserModal('${u._id}', '${u.username}', '${u.email}')" title="Edit Profile"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button class="btn-action ${toggleClass}" onclick="toggleRole('${u._id}', ${!u.is_admin})" title="${toggleTitle}">${toggleIcon}</button>
+                            <button class="btn-sm-del" onclick="deleteUser('${u._id}', '${u.email}')" title="Delete User"><i class="fa-solid fa-user-xmark"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    }
+
+    // Modal Helpers
+    function openUserModal(id, name, email) {
+        document.getElementById('edit-user-id').value = id;
+        document.getElementById('edit-user-name').value = name;
+        document.getElementById('edit-user-email').value = email;
+        document.getElementById('userEditModal').style.display = 'flex';
+    }
+    function closeUserModal() { document.getElementById('userEditModal').style.display = 'none'; }
+
+    document.getElementById('userEditForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('edit-user-id').value;
+        const name = document.getElementById('edit-user-name').value;
+        const res = await fetch(`/api/v1/admin/users/${id}`, {
+            method: 'PUT',
+            headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: name })
+        });
+        if(res.ok) { addLog(`Updated user ${name}`); loadUsers(); closeUserModal(); }
+        else { alert("Update failed"); }
+    };
+
+    async function toggleRole(id, makeAdmin) {
+        const res = await fetch(`/api/v1/admin/users/${id}`, {
+            method: 'PUT',
+            headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_admin: makeAdmin, role: makeAdmin ? 'admin' : 'user' })
+        });
+        if(res.ok) { addLog(`User role updated successfully.`); loadUsers(); loadStats(); }
+        else { 
+            const error = await res.json();
+            alert(error.detail || "Action failed"); 
+        }
+    }
+
+    // 3. Load Global Shipments (Leveraging the newly admin-aware get_shipments)
+    async function loadGlobalShipments() {
+        const res = await getJSON('/api/v1/shipments');
+        if(res.ok) {
+            allShipments = await res.json();
+            const tbody = document.getElementById('shipment-table-body');
+            tbody.innerHTML = '';
+            
+            allShipments.slice(-10).reverse().forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="shipment-num-admin">${s.Shipment_Number}</td>
+                    <td class="shipment-info-admin">${s.created_by}</td>
+                    <td class="shipment-info-admin">${s.Route_Details}</td>
+                    <td>
+                        <div class="shipment-actions-flex">
+                            <button class="btn-action btn-blue-glass" onclick="editShipment('${s.Shipment_Number}')" title="Master Override"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-sm-del" onclick="deleteGlobalShipment('${s.Shipment_Number}')" title="Universal Purge"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    }
+
+    let allShipments = [];
+
+    function editShipment(num) {
+        const shipment = allShipments.find(s => s.Shipment_Number === num);
+        if(!shipment) return;
+
+        addLog(`Initiating Shipment Master Override for ${num}`);
+        
+        // Fill Modal
+        document.getElementById('edit_Shipment_Number').value = shipment.Shipment_Number;
+        document.getElementById('edit_Device').value = shipment.Device;
+        document.getElementById('edit_Route_Details').value = shipment.Route_Details;
+        document.getElementById('edit_Goods_Type').value = shipment.Goods_Type || "N/A";
+        document.getElementById('edit_Po_Number').value = shipment.Po_Number || "N/A";
+        document.getElementById('edit_NDC_Number').value = shipment.NDC_Number || "N/A";
+        document.getElementById('edit_Serial_Number_of_Goods').value = shipment.Serial_Number_of_Goods || "N/A";
+        document.getElementById('edit_Container_number').value = shipment.Container_number || "N/A";
+        document.getElementById('edit_Batch_ID').value = shipment.Batch_ID || "";
+        document.getElementById('edit_Shipment_Description').value = shipment.Shipment_Description || "";
+
+        if(shipment.Expected_Delivery_Date) {
+            const d = new Date(shipment.Expected_Delivery_Date);
+            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+            document.getElementById('edit_Expected_Delivery_Date').value = d.toISOString().slice(0,16);
+        }
+
+        document.getElementById('shipmentEditModal').style.display = 'flex';
+    }
+
+    function closeShipmentModal() { document.getElementById('shipmentEditModal').style.display = 'none'; }
+
+    document.getElementById('shipmentEditForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const raw = Object.fromEntries(new FormData(e.target).entries());
+        if(raw.Expected_Delivery_Date) raw.Expected_Delivery_Date = new Date(raw.Expected_Delivery_Date).toISOString();
+        const num = raw.Shipment_Number;
+
+        const res = await fetch(`/api/v1/shipments/${num}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+            body: JSON.stringify(raw)
+        });
+
+        if(res.ok) {
+            addLog(`Shipment ${num} successfully modified via Master Override.`);
+            closeShipmentModal();
+            loadGlobalShipments();
+        } else {
+            alert("Override failed");
+        }
+    };
+
+    // Actions
+    async function deleteUser(id, email) {
+        if(!confirm(`PRUDENCE: Deleting user ${email} is permanent. Continue?`)) return;
+        const res = await fetch(`/api/v1/admin/users/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        if(res.ok) { addLog(`User ${email} permanently purged from registry.`); loadUsers(); loadStats(); } 
+        else { alert("Failed to delete user."); }
+    }
+
+    async function deleteGlobalShipment(num) {
+        if(!confirm(`Delete shipment ${num} universally?`)) return;
+        const res = await fetch(`/api/v1/shipments/${num}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        if(res.ok) { addLog(`Shipment ${num} globally deleted.`); loadGlobalShipments(); loadStats(); } 
+        else { alert("Error deleting shipment."); }
+    }
+
+
+    // Start everything
+    window.onload = async () => {
+        const meRes = await getJSON('/api/v1/me');
+        if(meRes.ok) {
+            const me = await meRes.json();
+            currentUserEmail = me.email;
+        }
+
+        loadStats();
+        loadUsers();
+        loadGlobalShipments();
+        checkHealth();
+        setInterval(checkHealth, 10000); // Check health every 10s
+    };
+</script>
+{% endblock %}

@@ -263,6 +263,8 @@ async def get_current_user(token: str = Depends(JWTBearer())):
             "id": str(user["_id"]),
             "username": user.get("username"), 
             "email": user["email"],
-            "last_login": user.get("last_login") 
+            "last_login": user.get("last_login"),
+            "is_admin": user.get("is_admin", False),
+            "role": user.get("role", "user")
         }
     raise HTTPException(status_code=404, detail="User not found")

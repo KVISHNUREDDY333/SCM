@@ -59,14 +59,24 @@
                         <label for="Container_number" class="form-label">Container Number*</label>
                     </div>
 
-                    <!-- Row 2: Route Splitting (From -> To) -->
-                    <div class="form-group">
-                        <input id="route_from" type="text" class="form-input" placeholder=" " title="Origin" required />
-                        <label for="route_from" class="form-label">From (Origin)*</label>
-                    </div>
-                    <div class="form-group">
-                        <input id="route_to" type="text" class="form-input" placeholder=" " title="Destination" required />
-                        <label for="route_to" class="form-label">To (Destination)*</label>
+                    <!-- Row 2: Standardized Route Selection -->
+                    <div class="form-group full-col">
+                        <label for="Route_Details" class="form-label date-label">Route Selection*</label>
+                        <select id="Route_Details" name="Route_Details" class="form-input color-scheme-dark" required>
+                            <option value="" disabled selected>Select Global Route</option>
+                            <option>Newyork, USA → Chennai, India</option>
+                            <option>Chennai, India → Newyork, USA</option>
+                            <option>Chennai, India → London, UK</option>
+                            <option>Bengaluru, India → Newyork, USA</option>
+                            <option>London, UK → Chennai, India</option>
+                            <option>Newyork, USA → London, UK</option>
+                            <option>Bengaluru, India → London, UK</option>
+                            <option>Newyork, USA → Bengaluru, India</option>
+                            <option>Chennai, India → Bengaluru, India</option>
+                            <option>London, UK → Bengaluru, India</option>
+                            <option>Bengaluru, India → Chennai, India</option>
+                            <option>London, UK → Newyork, USA</option>
+                        </select>
                     </div>
 
                     <!-- Row 3: Goods & Device -->
@@ -146,10 +156,8 @@
         const formData = new FormData(e.target);
         const raw = Object.fromEntries(formData.entries());
 
-        // 1. COMBINE 'FROM' AND 'TO' INTO 'Route_Details' FOR BACKEND
-        const fromLoc = document.getElementById('route_from').value;
-        const toLoc = document.getElementById('route_to').value;
-        raw.Route_Details = `${fromLoc} -> ${toLoc}`;
+        // 1. DIRECT ROUTE SELECTION
+        raw.Route_Details = document.getElementById('Route_Details').value;
 
         // 2. Fix Date Format (ISO 8601)
         if(raw.Expected_Delivery_Date) {

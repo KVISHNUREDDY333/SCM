@@ -3,6 +3,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from fastapi.responses import RedirectResponse
+from backend.config.database import settings_collection
 import os
 import datetime
 
@@ -16,12 +18,26 @@ from backend.config.limiter import limiter
 from backend.middleware.security import IPAccessMiddleware
 
 # Import Routes
-from backend.routes import users, shipments, stream
+from backend.routes import users, shipments, stream, admin
 # Recaptcha ConfigS
 RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY") # Load from .env
 load_dotenv()
 
 app = FastAPI()
+
+# --- 0. Maintenance Middleware ---
+@app.middleware("http")
+async def maintenance_check(request: Request, call_next):
+    # Skip for static, login, and admin actions (so we can turn it off)
+    bypass_paths = ["/static", "/maintenance", "/api/v1/token", "/api/v1/admin", "/admin", "/api/v1/auth"]
+    if any(request.url.path.startswith(p) for p in bypass_paths) or request.url.path == "/":
+        return await call_next(request)
+
+    config = await settings_collection.find_one({"key": "maintenance_config"})
+    if config and config.get("value", {}).get("is_active"):
+        return RedirectResponse(url="/maintenance")
+        
+    return await call_next(request)
 
 # --- 1. Rate Limiter Configuration ---
 app.state.limiter = limiter
@@ -59,6 +75,7 @@ templates.env.globals["now"] = datetime.datetime.now
 app.include_router(users.router, prefix="/api/v1", tags=["Users"])
 app.include_router(shipments.router, prefix="/api/v1", tags=["Shipments"])
 app.include_router(stream.router, tags=["Stream"])
+app.include_router(admin.router, prefix="/api/v1", tags=["Admin"])
 
 # --- Frontend Page Routes ---
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
@@ -102,9 +119,17 @@ async def serve_data_stream(request: Request):
 async def serve_account(request: Request):
     return templates.TemplateResponse(request=request, name="account.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
 
+@app.get("/admin")
+async def serve_admin(request: Request):
+    return templates.TemplateResponse(request=request, name="admin.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
+
 @app.get("/forgot-password")
 async def serve_forgot_password(request: Request):
     return templates.TemplateResponse(request=request, name="forgot_password.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
+
+@app.get("/maintenance")
+async def serve_maintenance(request: Request):
+    return templates.TemplateResponse(request=request, name="maintenance.html", context={"request": request})
 
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc):
