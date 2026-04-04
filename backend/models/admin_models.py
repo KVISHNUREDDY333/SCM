@@ -25,3 +25,11 @@ class MaintenanceSchema(BaseModel):
     is_active: bool = False
     message: Optional[str] = "System is currently under maintenance. Please check back later."
     bypass_ips: Optional[list[str]] = []
+
+class DirectMessageSchema(BaseModel):
+    recipient_email: str
+    title: str
+    message: str
+    sender_email: Optional[str] = None
+    timestamp: datetime.datetime = Field(default_factory=datetime.datetime.now)
+    is_read: bool = False

@@ -153,6 +153,17 @@
     
     .btn-sm-del { background: rgba(255, 75, 75, 0.15); color: #ff4b4b; border: 1px solid rgba(255,75,75,0.3); padding: 5px; border-radius: 6px; cursor: pointer; transition: 0.3s; }
     .btn-sm-del:hover { background: #ff4b4b; color: white; }
+    .btn-msg { background: rgba(0, 210, 255, 0.1); color: var(--primary); border: 1px solid rgba(0,210,255,0.3); padding: 5px 8px; border-radius: 6px; cursor: pointer; transition: 0.3s; font-size: 0.85rem; }
+    .btn-msg:hover { background: var(--primary); color: #0b1120; }
+
+    /* --- COMPOSE MESSAGE MODAL --- */
+    #composeMessageModal .modal-card { max-width: 500px; }
+    .compose-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.2rem; }
+    .compose-field label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .compose-field input, .compose-field textarea { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; color: white; padding: 10px 14px; font-size: 0.95rem; outline: none; transition: 0.3s; }
+    .compose-field input:focus, .compose-field textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,210,255,0.1); }
+    .compose-field textarea { min-height: 120px; resize: vertical; }
+    .compose-recipient-tag { background: rgba(0,210,255,0.1); border: 1px solid rgba(0,210,255,0.2); border-radius: 20px; padding: 4px 12px; font-size: 0.8rem; color: var(--primary); font-weight: 600; display: inline-block; margin-bottom: 1.2rem; }
 
     /* --- STATUS BADGES --- */
     .badge-status { 
@@ -474,40 +485,6 @@
         </div>
     </div>
 
-    <!-- GLOBAL MISSION METRICS (Always Visible) -->
-    <div class="stats-row" id="stats-container">
-        <!-- System Stats -->
-        <div class="stat-card">
-             <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
-             <div class="stat-info"><h3>Total Users</h3><div class="stat-val" id="val-users">--</div></div>
-        </div>
-        <div class="stat-card">
-             <div class="stat-icon"><i class="fa-solid fa-box-open"></i></div>
-             <div class="stat-info"><h3>Total Active Shipments</h3><div class="stat-val" id="val-shipments">--</div></div>
-        </div>
-        <div class="stat-card">
-             <div class="stat-icon"><i class="fa-solid fa-microchip"></i></div>
-             <div class="stat-info"><h3>Active Devices (via Kafka)</h3><div class="stat-val" id="val-devices">--</div></div>
-        </div>
-        
-        <!-- Status Breakdown -->
-        <div class="stat-card border-bottom-transit">
-             <div class="stat-icon icon-transit"><i class="fa-solid fa-truck-fast"></i></div>
-             <div class="stat-info"><h3>In Transit</h3><div class="stat-val" id="count-transit">0</div></div>
-        </div>
-        <div class="stat-card border-bottom-delayed">
-             <div class="stat-icon icon-delayed"><i class="fa-solid fa-triangle-exclamation"></i></div>
-             <div class="stat-info"><h3>Delayed</h3><div class="stat-val" id="count-delayed">0</div></div>
-        </div>
-        <div class="stat-card border-bottom-delivered">
-             <div class="stat-icon icon-delivered"><i class="fa-solid fa-circle-check"></i></div>
-             <div class="stat-info"><h3>Delivered</h3><div class="stat-val" id="count-delivered">0</div></div>
-        </div>
-        <div class="stat-card border-bottom-cancelled">
-             <div class="stat-icon icon-cancelled"><i class="fa-solid fa-circle-xmark"></i></div>
-             <div class="stat-info"><h3>Cancelled</h3><div class="stat-val" id="count-cancelled">0</div></div>
-        </div>
-    </div>
 
     <!-- ENTERPRISE TAB NAVIGATION -->
     <div class="admin-tabs hide-scrollbar">
@@ -538,6 +515,38 @@
 
     <!-- TAB 2: GLOBAL SHIPMENTS (Shipment Master) -->
     <div id="tab-shipments" class="tab-content">
+
+        <!-- LIVE AGGREGATION METRICS -->
+        <div class="stats-row" id="stats-container">
+            <div class="stat-card">
+                 <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                 <div class="stat-info"><h3>Total Users</h3><div class="stat-val" id="val-users">--</div></div>
+            </div>
+            <div class="stat-card">
+                 <div class="stat-icon"><i class="fa-solid fa-box-open"></i></div>
+                 <div class="stat-info"><h3>Total Active Shipments</h3><div class="stat-val" id="val-shipments">--</div></div>
+            </div>
+            <div class="stat-card">
+                 <div class="stat-icon"><i class="fa-solid fa-microchip"></i></div>
+                 <div class="stat-info"><h3>Active Devices (via Kafka)</h3><div class="stat-val" id="val-devices">--</div></div>
+            </div>
+            <div class="stat-card border-bottom-transit">
+                 <div class="stat-icon icon-transit"><i class="fa-solid fa-truck-fast"></i></div>
+                 <div class="stat-info"><h3>In Transit</h3><div class="stat-val" id="count-transit">0</div></div>
+            </div>
+            <div class="stat-card border-bottom-delayed">
+                 <div class="stat-icon icon-delayed"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                 <div class="stat-info"><h3>Delayed</h3><div class="stat-val" id="count-delayed">0</div></div>
+            </div>
+            <div class="stat-card border-bottom-delivered">
+                 <div class="stat-icon icon-delivered"><i class="fa-solid fa-circle-check"></i></div>
+                 <div class="stat-info"><h3>Delivered</h3><div class="stat-val" id="count-delivered">0</div></div>
+            </div>
+            <div class="stat-card border-bottom-cancelled">
+                 <div class="stat-icon icon-cancelled"><i class="fa-solid fa-circle-xmark"></i></div>
+                 <div class="stat-info"><h3>Cancelled</h3><div class="stat-val" id="count-cancelled">0</div></div>
+            </div>
+        </div>
 
         <div class="admin-section">
             <div class="section-title"><i class="fa-solid fa-earth-americas color-primary"></i> Global Master Registry (Shipment Master)</div>
@@ -634,6 +643,27 @@
                 <button type="submit" class="btn btn-primary">Save Changes</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- COMPOSE DIRECT MESSAGE MODAL -->
+<div id="composeMessageModal" class="modal-overlay">
+    <div class="modal-card">
+        <h2><i class="fa-solid fa-paper-plane color-primary"></i> Dispatch Message</h2>
+        <div class="compose-recipient-tag" id="compose-recipient-display"><i class="fa-solid fa-user"></i> To: —</div>
+        <input type="hidden" id="compose-recipient-email">
+        <div class="compose-field">
+            <label>Message Title</label>
+            <input type="text" id="compose-title" placeholder="e.g. Shipment Alert, Access Update...">
+        </div>
+        <div class="compose-field">
+            <label>Message Body</label>
+            <textarea id="compose-message" placeholder="Write your message here..."></textarea>
+        </div>
+        <div class="modal-foot">
+            <button type="button" class="btn btn-ghost" onclick="closeMessageModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="sendDirectMessage()"><i class="fa-solid fa-paper-plane"></i> Send</button>
+        </div>
     </div>
 </div>
 
@@ -937,6 +967,7 @@
                                 <button class="btn-action btn-edit-usr" onclick="openUserModal('${u._id}', '${u.username}', '${u.email}')" title="Edit Profile">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
+                                <button class="btn-msg" onclick="openMessageModal('${u.email}', '${u.username}')" title="Send Direct Message"><i class="fa-solid fa-message"></i></button>
                                 <button class="btn-action ${toggleClass}" onclick="toggleRole('${u._id}', ${!u.is_admin})" title="${toggleTitle}">${toggleIcon}</button>
                                 <button class="btn-sm-del" onclick="deleteUser('${u._id}', '${u.email}')" title="Delete User"><i class="fa-solid fa-user-xmark"></i></button>
                             </div>
@@ -966,6 +997,35 @@
         document.getElementById('userEditModal').style.display = 'flex';
     }
     function closeUserModal() { document.getElementById('userEditModal').style.display = 'none'; }
+
+    // --- DIRECT MESSAGE HELPERS ---
+    function openMessageModal(email, username) {
+        document.getElementById('compose-recipient-email').value = email;
+        document.getElementById('compose-recipient-display').innerHTML = `<i class="fa-solid fa-user"></i> To: <strong>${username}</strong> &lt;${email}&gt;`;
+        document.getElementById('compose-title').value = '';
+        document.getElementById('compose-message').value = '';
+        document.getElementById('composeMessageModal').style.display = 'flex';
+    }
+    function closeMessageModal() { document.getElementById('composeMessageModal').style.display = 'none'; }
+
+    async function sendDirectMessage() {
+        const recipientEmail = document.getElementById('compose-recipient-email').value;
+        const title = document.getElementById('compose-title').value.trim();
+        const message = document.getElementById('compose-message').value.trim();
+        if(!title || !message) { showGlobalModal('Incomplete', 'Please fill in both Title and Message fields.', 'error'); return; }
+        const res = await fetch('/api/v1/admin/message', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recipient_email: recipientEmail, title, message })
+        });
+        if(res.ok) {
+            closeMessageModal();
+            showGlobalModal('Message Dispatched', `Your message has been delivered to ${recipientEmail}.`, 'success');
+            addLog(`Direct message sent to ${recipientEmail}: "${title}"`);
+        } else {
+            showGlobalModal('Dispatch Failed', 'Could not send message. Check permissions.', 'error');
+        }
+    }
 
     document.getElementById('userEditForm').onsubmit = async (e) => {
         e.preventDefault();
@@ -1175,10 +1235,24 @@
         if(res.ok) {
             addLog(`Shipment ${num} successfully modified via Master Override.`);
             closeShipmentModal();
-            // RE-INITIALIZE ALL SHIPMENT TABLES & METRICS INSTANTLY
+
+            // ── INSTANT OPTIMISTIC UPDATE ──────────────────────────────────
+            // Patch the in-memory array immediately so every table & metric
+            // reflects the new status without waiting for a network round-trip.
+            const idx = allShipments.findIndex(s => s.Shipment_Number === num);
+            if(idx !== -1) {
+                allShipments[idx] = { ...allShipments[idx], ...raw };
+            }
+            // Immediately re-render tables and status boxes from updated cache
+            renderGlobalTable(allShipments);
+            updateStatusMetrics(allShipments);
+
+            // ── BACKGROUND SERVER SYNC ─────────────────────────────────────
+            // Confirm saved state from DB to stay in perfect server parity
             await loadGlobalShipments();
-            await loadStats(); 
-            showGlobalModal('Master Override Success', `Registry states updated for ${num}`, 'success');
+            await loadStats();
+
+            showGlobalModal('Master Override Success', `All tables & metrics updated for ${num}`, 'success');
         } else {
             showGlobalModal('Override Failed', "Critical error during registry modification.", 'error');
         }

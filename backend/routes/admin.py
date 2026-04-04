@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from backend.config.database import user_collection, shipment_collection, database, audit_collection, broadcast_collection, settings_collection
+from backend.config.database import user_collection, shipment_collection, database, audit_collection, broadcast_collection, settings_collection, direct_messages_collection
 from backend.middleware.security import VerifyAdmin, JWTBearer
-from backend.models.admin_models import UserUpdateSchema, AuditLogSchema, BroadcastSchema, MaintenanceSchema
+from backend.models.admin_models import UserUpdateSchema, AuditLogSchema, BroadcastSchema, MaintenanceSchema, DirectMessageSchema
 from backend.auth.jwt_handler import decodeJWT
 from bson import ObjectId
 import os
@@ -175,13 +175,101 @@ async def create_broadcast(payload: BroadcastSchema, token: str = Depends(JWTBea
     return {"message": "Broadcast transmitted successfully"}
 
 @router.get("/admin/broadcasts", dependencies=[Depends(JWTBearer())])
-async def get_broadcasts(limit: int = Query(50, ge=1, le=200)):
-    """Retrieves all historical broadcast messages."""
+async def get_broadcasts(limit: int = Query(50, ge=1, le=200), token: str = Depends(JWTBearer())):
+    """Retrieves broadcast messages, excluding ones the user has personally dismissed."""
+    decoded = decodeJWT(token)
+    email = decoded.get("email", "")
+    user = await user_collection.find_one({"email": email})
+    dismissed = user.get("dismissed_broadcasts", []) if user else []
+
     broadcasts = []
     async for b in broadcast_collection.find().sort("timestamp", -1).limit(limit):
         b["_id"] = str(b["_id"])
-        broadcasts.append(b)
+        if b["_id"] not in dismissed:
+            broadcasts.append(b)
     return broadcasts
+
+@router.post("/broadcasts/{id}/dismiss", dependencies=[Depends(JWTBearer())])
+async def dismiss_broadcast(id: str, token: str = Depends(JWTBearer())):
+    """Soft-deletes a broadcast for the current user only. Does NOT affect other users."""
+    decoded = decodeJWT(token)
+    email = decoded.get("email")
+    await user_collection.update_one(
+        {"email": email},
+        {"$addToSet": {"dismissed_broadcasts": id}}
+    )
+    return {"message": "Broadcast dismissed for your account"}
+
+@router.delete("/broadcasts/dismiss-all", dependencies=[Depends(JWTBearer())])
+async def dismiss_all_broadcasts(token: str = Depends(JWTBearer())):
+    """Clears all current broadcasts from the current user's view only."""
+    decoded = decodeJWT(token)
+    email = decoded.get("email")
+    # Get all current broadcast IDs and add them all to dismissed list
+    all_ids = []
+    async for b in broadcast_collection.find({}, {"_id": 1}):
+        all_ids.append(str(b["_id"]))
+    await user_collection.update_one(
+        {"email": email},
+        {"$addToSet": {"dismissed_broadcasts": {"$each": all_ids}}}
+    )
+    return {"message": "All broadcasts dismissed for your account"}
+
+@router.delete("/admin/broadcasts/{id}", dependencies=[Depends(VerifyAdmin())])
+async def delete_broadcast(id: str, token: str = Depends(JWTBearer())):
+    """ADMIN: Permanently deletes a broadcast for ALL users."""
+    res = await broadcast_collection.delete_one({"_id": ObjectId(id)})
+    if res.deleted_count == 1:
+        email = decodeJWT(token).get("email")
+        await log_admin_action(email, "BROADCAST_DELETE", f"Deleted broadcast ID: {id}")
+        return {"message": "Broadcast permanently removed for all users"}
+    raise HTTPException(status_code=404, detail="Broadcast not found")
+
+@router.delete("/admin/broadcasts", dependencies=[Depends(VerifyAdmin())])
+async def clear_all_broadcasts(token: str = Depends(JWTBearer())):
+    """ADMIN: Permanently purges the entire global broadcast history for all users."""
+    await broadcast_collection.delete_many({})
+    email = decodeJWT(token).get("email")
+    await log_admin_action(email, "BROADCAST_PURGE", "Purged entire broadcast registry history for all users.")
+    return {"message": "All broadcasts permanently cleared for all users"}
+
+@router.post("/admin/message", dependencies=[Depends(VerifyAdmin())])
+async def send_direct_message(payload: DirectMessageSchema, token: str = Depends(JWTBearer())):
+    """Sends a targeted direct message from admin to a specific user's inbox."""
+    decoded = decodeJWT(token)
+    payload.sender_email = decoded.get("email")
+    msg_dict = payload.dict()
+    msg_dict["timestamp"] = datetime.now().isoformat()
+    await direct_messages_collection.insert_one(msg_dict)
+    await log_admin_action(payload.sender_email, "DIRECT_MESSAGE", f"Sent message to {payload.recipient_email}: {payload.title}")
+    return {"message": "Message dispatched successfully"}
+
+@router.get("/messages/inbox", dependencies=[Depends(JWTBearer())])
+async def get_inbox(token: str = Depends(JWTBearer())):
+    """Returns all direct messages addressed to the logged-in user."""
+    decoded = decodeJWT(token)
+    email = decoded.get("email")
+    msgs = []
+    async for m in direct_messages_collection.find({"recipient_email": email}).sort("timestamp", -1):
+        m["_id"] = str(m["_id"])
+        msgs.append(m)
+    return msgs
+
+@router.patch("/messages/{msg_id}/read", dependencies=[Depends(JWTBearer())])
+async def mark_message_read(msg_id: str):
+    """Marks a specific direct message as read."""
+    await direct_messages_collection.update_one({"_id": ObjectId(msg_id)}, {"$set": {"is_read": True}})
+    return {"message": "Marked as read"}
+
+@router.delete("/messages/{msg_id}", dependencies=[Depends(JWTBearer())])
+async def delete_direct_message(msg_id: str, token: str = Depends(JWTBearer())):
+    """Deletes a specific direct message from the inbox."""
+    decoded = decodeJWT(token)
+    email = decoded.get("email")
+    res = await direct_messages_collection.delete_one({"_id": ObjectId(msg_id), "recipient_email": email})
+    if res.deleted_count == 1:
+        return {"message": "Message deleted"}
+    raise HTTPException(status_code=404, detail="Message not found")
 
 @router.post("/admin/maintenance", dependencies=[Depends(VerifyAdmin())])
 async def toggle_maintenance(payload: MaintenanceSchema, token: str = Depends(JWTBearer())):

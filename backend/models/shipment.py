@@ -15,6 +15,7 @@ class ShipmentSchema(BaseModel):
 
     Batch_ID: Optional[str] = None
     Shipment_Description: Optional[str] = None
+    Status: Optional[str] = "In Transit"
 
     class Config:
         json_schema_extra = {
