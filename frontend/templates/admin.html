@@ -134,6 +134,21 @@
     .btn-sm-del { background: rgba(255, 75, 75, 0.15); color: #ff4b4b; border: 1px solid rgba(255,75,75,0.3); padding: 5px; border-radius: 6px; cursor: pointer; transition: 0.3s; }
     .btn-sm-del:hover { background: #ff4b4b; color: white; }
 
+    /* --- STATUS BADGES --- */
+    .badge-status { 
+        padding: 4px 12px; 
+        border-radius: 6px; 
+        font-size: 0.75rem; 
+        font-weight: 700; 
+        text-transform: uppercase;
+        display: inline-block;
+        letter-spacing: 0.5px;
+    }
+    .badge-transit { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-delayed { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-delivered { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-cancelled { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
     .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); font-style: italic; }
 
     /* Layout Splits */
@@ -405,7 +420,7 @@
             <div class="section-title"><i class="fa-solid fa-earth-americas color-primary"></i> Global Master Registry (Shipment Master)</div>
             <div class="table-responsive">
                 <table class="data-table">
-                    <thead><tr><th>Number</th><th>Creator</th><th>Route</th><th>Master Override / Purge</th></tr></thead>
+                    <thead><tr><th>Number</th><th>Creator</th><th>Route</th><th>Current Status</th><th>Master Override / Purge</th></tr></thead>
                     <tbody id="shipment-table-body"></tbody>
                 </table>
             </div>
@@ -525,6 +540,15 @@
             <div class="form-group">
                 <label class="form-label">Expected Delivery</label>
                 <input id="edit_Expected_Delivery_Date" name="Expected_Delivery_Date" type="datetime-local" class="form-input input-date-dark" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Global Status Override</label>
+                <select id="edit_Status" name="Status" class="form-input color-scheme-dark" required>
+                    <option value="In Transit">In Transit</option>
+                    <option value="Delayed">Delayed</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
             </div>
             <div class="form-group">
                 <label class="form-label">Batch ID (Optional)</label>
@@ -787,8 +811,8 @@
             headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: name })
         });
-        if(res.ok) { addLog(`Updated user ${name}`); loadUsers(); closeUserModal(); }
-        else { alert("Update failed"); }
+        if(res.ok) { addLog(`Updated user ${name}`); loadUsers(); closeUserModal(); showGlobalModal('Success', `User ${name} updated.`, 'success'); }
+        else { showGlobalModal('Update Failed', "Unable to save user profile changes.", 'error'); }
     };
 
     async function toggleRole(id, makeAdmin) {
@@ -797,10 +821,10 @@
             headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
             body: JSON.stringify({ is_admin: makeAdmin, role: makeAdmin ? 'admin' : 'user' })
         });
-        if(res.ok) { addLog(`User role updated successfully.`); loadUsers(); loadStats(); }
+        if(res.ok) { addLog(`User role updated successfully.`); loadUsers(); loadStats(); showGlobalModal('Access Updated', `Permissions for user modified.`, 'success'); }
         else { 
             const error = await res.json();
-            alert(error.detail || "Action failed"); 
+            showGlobalModal('System Error', error.detail || "Action failed", 'error'); 
         }
     }
 
@@ -814,10 +838,19 @@
             
             allShipments.slice(-10).reverse().forEach(s => {
                 const tr = document.createElement('tr');
+                
+                // Determine Badge Class
+                let badgeClass = 'badge-transit';
+                const status = s.Status || 'In Transit';
+                if(status === 'Delayed') badgeClass = 'badge-delayed';
+                if(status === 'Delivered') badgeClass = 'badge-delivered';
+                if(status === 'Cancelled') badgeClass = 'badge-cancelled';
+
                 tr.innerHTML = `
                     <td class="shipment-num-admin">${s.Shipment_Number}</td>
                     <td class="shipment-info-admin">${s.created_by}</td>
                     <td class="shipment-info-admin">${s.Route_Details}</td>
+                    <td><span class="badge-status ${badgeClass}">${status}</span></td>
                     <td>
                         <div class="shipment-actions-flex">
                             <button class="btn-action btn-blue-glass" onclick="editShipment('${s.Shipment_Number}')" title="Master Override"><i class="fa-solid fa-pen"></i></button>
@@ -849,6 +882,7 @@
         document.getElementById('edit_Container_number').value = shipment.Container_number || "N/A";
         document.getElementById('edit_Batch_ID').value = shipment.Batch_ID || "";
         document.getElementById('edit_Shipment_Description').value = shipment.Shipment_Description || "";
+        document.getElementById('edit_Status').value = shipment.Status || "In Transit";
 
         if(shipment.Expected_Delivery_Date) {
             const d = new Date(shipment.Expected_Delivery_Date);
@@ -877,30 +911,43 @@
             addLog(`Shipment ${num} successfully modified via Master Override.`);
             closeShipmentModal();
             loadGlobalShipments();
+            showGlobalModal('Master Override Success', `Registry updated for ${num}`, 'success');
         } else {
-            alert("Override failed");
+            showGlobalModal('Override Failed', "Critical error during registry modification.", 'error');
         }
     };
 
     // Actions
     async function deleteUser(id, email) {
-        if(!confirm(`PRUDENCE: Deleting user ${email} is permanent. Continue?`)) return;
-        const res = await fetch(`/api/v1/admin/users/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': 'Bearer ' + getToken() }
+        confirmGlobalModal('🚨 Critical Security Action', `PRUDENCE: Deleting user ${email} is permanent. Continue?`, async () => {
+            const res = await fetch(`/api/v1/admin/users/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            if(res.ok) { 
+                addLog(`User ${email} permanently purged from registry.`); 
+                loadUsers(); 
+                loadStats();
+                showGlobalModal('Purge Complete', `Identity ${email} removed.`, 'success');
+            } 
+            else { showGlobalModal('Action Failed', "Unable to delete user.", 'error'); }
         });
-        if(res.ok) { addLog(`User ${email} permanently purged from registry.`); loadUsers(); loadStats(); } 
-        else { alert("Failed to delete user."); }
     }
 
     async function deleteGlobalShipment(num) {
-        if(!confirm(`Delete shipment ${num} universally?`)) return;
-        const res = await fetch(`/api/v1/shipments/${num}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': 'Bearer ' + getToken() }
+        confirmGlobalModal('📦 Registry Purge', `Universal Master Override: Delete shipment ${num} universally?`, async () => {
+            const res = await fetch(`/api/v1/shipments/${num}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            if(res.ok) { 
+                addLog(`Shipment ${num} globally deleted.`); 
+                loadGlobalShipments(); 
+                loadStats();
+                showGlobalModal('Registry Updated', `Shipment ${num} purged.`, 'success');
+            } 
+            else { showGlobalModal('Error', "Master Registry deletion failed.", 'error'); }
         });
-        if(res.ok) { addLog(`Shipment ${num} globally deleted.`); loadGlobalShipments(); loadStats(); } 
-        else { alert("Error deleting shipment."); }
     }
 
 

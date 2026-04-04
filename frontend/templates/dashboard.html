@@ -44,21 +44,19 @@
         padding-right: 8px;
     }
     
-    /* Modern Webkit Scrollbar */
+    /* Ultra-Slim Transparent Webkit Scrollbar */
     .shipments-list::-webkit-scrollbar { 
-        width: 10px; 
+        width: 6px; 
     }
     .shipments-list::-webkit-scrollbar-track { 
-        background: rgba(15, 23, 42, 0.4); 
-        border-radius: 10px;
+        background: transparent;
     }
     .shipments-list::-webkit-scrollbar-thumb { 
-        background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+        background: linear-gradient(135deg, rgba(59, 91, 219, 0.2) 0%, rgba(0, 210, 255, 0.2) 100%);
         border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.1);
     }
     .shipments-list::-webkit-scrollbar-thumb:hover { 
-        background: var(--primary);
+        background: rgba(0, 210, 255, 0.5);
     }
     
     .loader-container { text-align: center; padding: 4rem; color: var(--text-muted); }
@@ -147,6 +145,13 @@
                 item.onmouseenter = () => { item.style.background = 'rgba(255,255,255,0.06)'; };
                 item.onmouseleave = () => { item.style.background = 'rgba(255,255,255,0.03)'; };
 
+                // Status Color Logic
+                let statusColor = 'var(--primary)'; // Default In Transit
+                const status = s.Status || 'In Transit';
+                if(status === 'Delayed') statusColor = '#f59e0b';
+                if(status === 'Delivered') statusColor = '#10b981';
+                if(status === 'Cancelled') statusColor = '#ef4444';
+
                 item.innerHTML = `
                     <div style="display:flex; align-items:center; gap:15px;">
                         <div style="background:rgba(0,210,255,0.1); width:45px; height:45px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--primary); font-size: 1.2rem;">
@@ -160,9 +165,9 @@
                         </div>
                     </div>
                     <div style="text-align:right;">
-                        <div style="color:var(--accent); font-weight:600; font-size: 0.9rem;">In Transit</div>
-                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top: 2px;">
-                            ${new Date(s.Expected_Delivery_Date).toLocaleDateString()}
+                        <div style="color:${statusColor}; font-weight:700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">${status}</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top: 3px;">
+                            ETA: ${new Date(s.Expected_Delivery_Date).toLocaleDateString()}
                         </div>
                     </div>
                 `;

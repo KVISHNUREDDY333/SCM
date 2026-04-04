@@ -12,6 +12,7 @@ class ShipmentSchema(BaseModel):
     Container_number: str
     Goods_Type: str
     Expected_Delivery_Date: datetime
+    Status: str = "In Transit"
     Batch_ID: Optional[str] = None
     Shipment_Description: Optional[str] = None
 
@@ -26,6 +27,7 @@ class ShipmentSchema(BaseModel):
                 "Serial_Number_of_Goods": "SN-555444",
                 "Container_number": "CONT-A1",
                 "Goods_Type": "Pharmaceuticals",
-                "Expected_Delivery_Date": "2023-12-31T12:00:00"
+                "Expected_Delivery_Date": "2023-12-31T12:00:00",
+                "Status": "In Transit"
             }
         }

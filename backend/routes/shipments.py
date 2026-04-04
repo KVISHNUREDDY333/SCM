@@ -90,6 +90,13 @@ async def update_shipment(shipment_number: str, shipment: ShipmentSchema = Body(
 
     # Convert Pydantic model to dict
     update_data = shipment.dict()
+    
+    # --- SECURITY: LOCK STATUS TO ADMINS ONLY ---
+    # We ensure that the 'Status' field cannot be modified by standard users.
+    # If not an admin, we ignore any status sent in the payload and stick to the original state.
+    if not is_admin:
+        update_data["Status"] = existing_shipment.get("Status", "In Transit")
+
     update_data["created_by"] = existing_shipment.get("created_by")
     
     # Ensure date is formatted correctly if present

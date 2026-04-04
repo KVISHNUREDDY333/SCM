@@ -6,6 +6,7 @@
     .container {
         width: 100% !important;
         max-width: 95% !important;
+        padding-top: 0.75rem !important; /* Moved search bar and table up */
     }
     /* --- WIDE LAYOUT STRATEGY --- */
     .wide-layout {
@@ -20,18 +21,20 @@
         background-position: center;
         border: 1px solid var(--glass-border);
         border-radius: var(--card-radius);
-        padding: 3rem 2rem;
+        padding: 1.25rem 2rem; /* Reduced padding as requested */
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 0.75rem; /* Moved table some up */
         box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     }
 
     .filter-label {
-        font-size: 1.6rem;
-        font-weight: 600;
-        margin-bottom: 2rem;
+        font-size: 1.3rem; /* Reduced label size for cleaner look */
+        font-weight: 700;
+        margin-bottom: 1.25rem;
         color: white;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 0 2px 10px rgba(0,210,255,0.4);
     }
 
     /* Controls Container */
@@ -85,29 +88,44 @@
     }
 
     .data-table thead th {
-        background-color: #3b5bdb;
+        background: linear-gradient(180deg, #3b5bdb 0%, #2b45b5 100%); /* Subtle premium gradient */
         color: white;
         padding: 1.2rem;
         text-align: left;
-        font-weight: 600;
-        text-transform: capitalize;
-        letter-spacing: 0.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
         position: sticky;
         top: 0;
         z-index: 10;
-        border-bottom: 2px solid rgba(0,0,0,0.1);
+        border-bottom: 2px solid rgba(0,0,0,0.2);
+        box-shadow: inset 0 -1px 0 rgba(255,255,255,0.1);
     }
+
+    .th-center { text-align: center !important; }
 
     .data-table thead th:first-child { border-top-left-radius: 10px; }
     .data-table thead th:last-child { border-top-right-radius: 10px; }
 
     .data-table tbody tr {
-        background: rgba(255, 255, 255, 0.03);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        transition: background 0.2s;
+        background: rgba(255, 255, 255, 0.02);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .data-table tbody tr:hover { background: rgba(255, 255, 255, 0.08); }
-    .data-table td { padding: 1.2rem; color: #cbd5e1; vertical-align: middle; }
+    
+    /* Alternate row background */
+    .data-table tbody tr:nth-child(even) {
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .data-table tbody tr:hover { 
+        background: rgba(59, 91, 219, 0.12); /* Subtle blue glow on hover */
+        transform: scale(1.002);
+        box-shadow: inset 4px 0 0 var(--primary);
+    }
+    .data-table td { padding: 1.1rem 1.2rem; color: #cbd5e1; vertical-align: middle; }
+    .td-center { text-align: center; }
 
     /* --- ACTION BUTTONS --- */
     .action-container {
@@ -136,6 +154,21 @@
         transform: scale(1.1);
         box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
     }
+
+    /* --- STATUS BADGES --- */
+    .badge-status { 
+        padding: 4px 12px; 
+        border-radius: 6px; 
+        font-size: 0.75rem; 
+        font-weight: 700; 
+        text-transform: uppercase;
+        display: inline-block;
+        letter-spacing: 0.5px;
+    }
+    .badge-transit { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-delayed { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-delivered { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-cancelled { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
 
     /* New Edit Button */
     .btn-edit {
@@ -225,25 +258,23 @@
         border: 1px solid var(--glass-border);
         display: block;
         position: relative;
+        margin-bottom: 5rem; /* Added space below the table */
     }
 
-    /* Modern Webkit Scrollbar */
+    /* Ultra-Slim Transparent Webkit Scrollbar */
     .table-scroll-container::-webkit-scrollbar { 
-        width: 10px; 
-        height: 10px;
+        width: 6px; 
+        height: 6px;
     }
     .table-scroll-container::-webkit-scrollbar-track { 
-        background: rgba(15, 23, 42, 0.6); 
-        border-radius: 10px;
+        background: transparent;
     }
     .table-scroll-container::-webkit-scrollbar-thumb { 
-        background: #3b5bdb;
-        background: linear-gradient(135deg, #5d6d7772 0%, #00d2ff 100%);
+        background: linear-gradient(135deg, rgba(59, 91, 219, 0.2) 0%, rgba(0, 210, 255, 0.2) 100%);
         border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.1);
     }
     .table-scroll-container::-webkit-scrollbar-thumb:hover { 
-        background: var(--primary);
+        background: rgba(0, 210, 255, 0.5);
     }
 </style>
 
@@ -288,9 +319,10 @@
                 <tr>
                     <th>Shipment Number</th>
                     <th>Device Id</th>
-                    <th>Battery</th>
-                    <th>Temp</th>
+                    <th class="th-center">Battery</th>
+                    <th class="th-center">Temp</th>
                     <th>Route</th>
+                    <th class="th-center">Status</th>
                     <th>Expected Delivery</th>
                     <th>Timestamp</th>
                     <th class="th-center">Actions</th>
@@ -317,6 +349,10 @@
             <div class="select-wrapper full-width">
                 <label class="select-label">Shipment Number</label>
                 <input id="edit_Shipment_Number" name="Shipment_Number" type="text" class="filter-input input-readonly" readonly>
+            </div>
+            <div class="select-wrapper full-width">
+                <label class="select-label">Current Status (Admin Managed)</label>
+                <input id="edit_Status" name="Status" type="text" class="filter-input input-readonly" readonly>
             </div>
             <div class="select-wrapper full-width">
                 <label class="select-label">Device ID</label>
@@ -480,15 +516,24 @@
             }
 
             const tr = document.createElement('tr');
+            
+            // Determine Badge Class
+            let badgeClass = 'badge-transit';
+            const status = s.Status || 'In Transit';
+            if(status === 'Delayed') badgeClass = 'badge-delayed';
+            if(status === 'Delivered') badgeClass = 'badge-delivered';
+            if(status === 'Cancelled') badgeClass = 'badge-cancelled';
+
             tr.innerHTML = `
-                <td style="color:var(--primary); font-weight:bold;">${s.Shipment_Number}</td>
+                <td style="color:var(--primary); font-weight:bold; text-shadow: 0 0 10px rgba(0,210,255,0.2);">${s.Shipment_Number}</td>
                 <td style="color:white; font-weight:bold;">${s.Device}</td>
-                <td><span style="background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-size:0.9rem;">${battery}%</span></td>
-                <td>${temp} °C</td>
-                <td>${displayRoute}</td>
-                <td style="color: #69db7c;">${deliveryDate}</td>
-                <td style="font-size:0.9rem;">${time}</td>
-                <td class="th-center">
+                <td class="td-center"><span style="background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 6px; font-size:0.85rem; border: 1px solid rgba(255,255,255,0.1);">${battery}%</span></td>
+                <td class="td-center" style="font-weight:600; color:#e2e8f0;">${temp} °C</td>
+                <td style="font-size:0.9rem; opacity:0.9;">${displayRoute}</td>
+                <td class="td-center"><span class="badge-status ${badgeClass}">${status}</span></td>
+                <td style="color: #69db7c; font-weight:600;">${deliveryDate}</td>
+                <td style="font-size:0.85rem; opacity:0.7;">${time}</td>
+                <td class="td-center">
                     <div class="action-container">
                         ${actionsHtml}
                     </div>
@@ -500,19 +545,25 @@
 
     // 6. Delete Logic
     async function deleteShipment(shipmentNumber) {
-        if(!confirm(`Are you sure you want to delete Shipment ${shipmentNumber}?`)) return;
+        confirmGlobalModal('⚠️ Confirm Deletion', `Are you sure you want to delete Shipment ${shipmentNumber}?`, async () => {
+            try {
+                const res = await fetch(`/api/v1/shipments/${shipmentNumber}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' }
+                });
 
-        try {
-            const res = await fetch(`/api/v1/shipments/${shipmentNumber}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' }
-            });
-
-            if(res.ok) {
-                allShipments = allShipments.filter(s => s.Shipment_Number !== shipmentNumber);
-                performSearch();
-            } else { alert("Failed to delete."); }
-        } catch(err) { console.error(err); alert("Connection error."); }
+                if(res.ok) {
+                    allShipments = allShipments.filter(s => s.Shipment_Number !== shipmentNumber);
+                    performSearch();
+                    showGlobalModal('Deleted', `Shipment ${shipmentNumber} purged.`, 'success');
+                } else { 
+                    showGlobalModal('Action Failed', 'Failed to delete shipment.', 'error'); 
+                }
+            } catch(err) { 
+                console.error(err); 
+                showGlobalModal('System Error', 'Connection or server error.', 'error'); 
+            }
+        });
     }
 
     // 7. Edit Modal Logic
@@ -533,9 +584,8 @@
         document.getElementById('edit_NDC_Number').value = shipment.NDC_Number || "N/A";
         document.getElementById('edit_Serial_Number_of_Goods').value = shipment.Serial_Number_of_Goods || "N/A";
         document.getElementById('edit_Container_number').value = shipment.Container_number || "N/A";
-        document.getElementById('edit_Batch_ID').value = shipment.Batch_ID || "";
-        document.getElementById('edit_Shipment_Description').value = shipment.Shipment_Description || "";
-
+        document.getElementById('edit_Status').value = shipment.Status || "In Transit";
+        
         // Date format fix
         if(shipment.Expected_Delivery_Date) {
             const d = new Date(shipment.Expected_Delivery_Date);
@@ -566,16 +616,16 @@
             });
 
             if(res.ok) {
-                alert('Shipment updated successfully');
+                showGlobalModal('Update Complete', 'Shipment updated successfully', 'success');
                 closeModal();
                 // Reload data silently and refresh table
                 const refresh = await getJSON('/api/v1/shipments');
                 allShipments = await refresh.json();
                 performSearch();
             } else {
-                alert('Update failed');
+                showGlobalModal('Update Failed', 'Shipment override failed.', 'error');
             }
-        } catch(err) { console.error(err); alert('Server error'); }
+        } catch(err) { console.error(err); showGlobalModal('System Error', 'Server or network error.', 'error'); }
     });
 
     // Close modal on outside click

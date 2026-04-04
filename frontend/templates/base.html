@@ -144,6 +144,50 @@
         @keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes toastOut { to { transform: translateX(100%); opacity: 0; } }
 
+        /* --- GLOBAL MODAL SYSTEM --- */
+        .global-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 14, 23, 0.85);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            display: none; align-items: center; justify-content: center;
+            z-index: 100000; 
+        }
+        .global-modal-card {
+            background: #0f172a;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            width: 450px;
+            padding: 2.5rem;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .global-modal-card.active { transform: scale(1); opacity: 1; }
+        .modal-icon-circle {
+            width: 70px; height: 70px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.5rem; font-size: 2rem;
+        }
+        .modal-type-success { background: rgba(0, 210, 255, 0.1); color: var(--primary); border: 2px solid var(--primary); }
+        .modal-type-error { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 2px solid #ef4444; }
+        .modal-type-info { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 2px solid #3b82f6; }
+        
+        .gmodal-title { font-size: 1.5rem; font-weight: 700; color: white; margin-bottom: 0.8rem; }
+        .gmodal-msg { color: var(--text-muted); line-height: 1.6; margin-bottom: 2rem; font-size: 1rem; }
+        .gmodal-actions { display: flex; gap: 12px; }
+        .btn-modal-close {
+            flex: 1; padding: 12px; border-radius: 12px;
+            background: var(--primary); color: white; border: none;
+            font-weight: 700; cursor: pointer; transition: 0.3s;
+            text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;
+        }
+        .btn-modal-close:hover { background: var(--secondary); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .btn-modal-cancel { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; }
+        .btn-modal-cancel:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+
         /* Responsive */
         @media(max-width: 768px) {
             .navbar { flex-direction: column; gap: 1rem; }
@@ -156,6 +200,21 @@
     <!-- Programmable Background -->
     <canvas id="canvas-bg"></canvas>
     <div class="toast-container" id="toast-container"></div>
+
+    <!-- GLOBAL MODAL OVERLAY -->
+    <div id="globalModalOverlay" class="global-modal-overlay">
+        <div id="globalModalCard" class="global-modal-card">
+            <div id="gmodal-icon-wrap" class="modal-icon-circle">
+                <i id="gmodal-icon" class="fa-solid fa-circle-info"></i>
+            </div>
+            <div id="gmodal-title" class="gmodal-title">Notification</div>
+            <div id="gmodal-msg" class="gmodal-msg">Description goes here...</div>
+            <div class="gmodal-actions">
+                <button id="gmodal-cancel-btn" class="btn-modal-close btn-modal-cancel" onclick="closeGlobalModal()">CANCEL</button>
+                <button id="gmodal-close-btn" class="btn-modal-close" onclick="closeGlobalModal()">DISMISS</button>
+            </div>
+        </div>
+    </div>
 
     <header class="navbar">
         <a href="/" class="brand"><i class="fa-solid fa-boxes-stacked"></i> SCMXpertLite</a>
@@ -367,6 +426,77 @@
                 window.location.replace('/dashboard');
             }
         });
+
+        // --- 4. Global Modal System ---
+        function showGlobalModal(title, message, type = 'info') {
+            const overlay = document.getElementById('globalModalOverlay');
+            const card = document.getElementById('globalModalCard');
+            const iconWrap = document.getElementById('gmodal-icon-wrap');
+            const icon = document.getElementById('gmodal-icon');
+            const titleEl = document.getElementById('gmodal-title');
+            const msgEl = document.getElementById('gmodal-msg');
+            const closeBtn = document.getElementById('gmodal-close-btn');
+
+            // Reset classes
+            iconWrap.className = 'modal-icon-circle';
+            closeBtn.className = 'btn-modal-close';
+
+            if(type === 'success') {
+                iconWrap.classList.add('modal-type-success');
+                icon.className = 'fa-solid fa-circle-check';
+                closeBtn.style.background = 'var(--primary)';
+            } else if(type === 'error') {
+                iconWrap.classList.add('modal-type-error');
+                icon.className = 'fa-solid fa-circle-xmark';
+                closeBtn.style.background = '#ef4444';
+            } else {
+                iconWrap.classList.add('modal-type-info');
+                icon.className = 'fa-solid fa-circle-info';
+                closeBtn.style.background = '#3b82f6';
+            }
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+            
+            overlay.style.display = 'flex';
+            setTimeout(() => card.classList.add('active'), 10);
+        }
+
+        function closeGlobalModal() {
+            const overlay = document.getElementById('globalModalOverlay');
+            const card = document.getElementById('globalModalCard');
+            card.classList.remove('active');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 400);
+        }
+
+        let gModalConfirmCallback = null;
+        function confirmGlobalModal(title, message, onConfirm) {
+            showGlobalModal(title, message, 'info');
+            const cancelBtn = document.getElementById('gmodal-cancel-btn');
+            const closeBtn = document.getElementById('gmodal-close-btn');
+            
+            cancelBtn.style.display = 'block';
+            closeBtn.textContent = 'CONFIRM';
+            closeBtn.style.background = '#ef4444'; // Red for confirm
+            
+            gModalConfirmCallback = onConfirm;
+            closeBtn.onclick = () => {
+                if(gModalConfirmCallback) gModalConfirmCallback();
+                closeGlobalModal();
+            };
+        }
+
+        // Custom override for showGlobalModal to handle button resets
+        const originalShowGlobalModal = showGlobalModal;
+        showGlobalModal = function(title, message, type = 'info') {
+            originalShowGlobalModal(title, message, type);
+            document.getElementById('gmodal-cancel-btn').style.display = 'none';
+            const closeBtn = document.getElementById('gmodal-close-btn');
+            closeBtn.textContent = 'DISMISS';
+            closeBtn.onclick = closeGlobalModal;
+        };
     </script>
     {% block scripts %}{% endblock %}
 </body>
