@@ -12,7 +12,7 @@ class ShipmentSchema(BaseModel):
     Container_number: str
     Goods_Type: str
     Expected_Delivery_Date: datetime
-    Status: str = "In Transit"
+
     Batch_ID: Optional[str] = None
     Shipment_Description: Optional[str] = None
 

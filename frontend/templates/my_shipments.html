@@ -248,6 +248,8 @@
     .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:1rem; }
     .btn-cancel { background:transparent; border:1px solid rgba(255,255,255,0.3); color:white; }
     .textarea-resizable { resize: vertical; min-height: 80px; }
+    
+    .status-locked { color: var(--primary) !important; font-weight: 700 !important; cursor: not-allowed; opacity: 0.8; }
 
     /* --- SCROLLABLE TABLE --- */
     .table-scroll-container {
@@ -351,12 +353,12 @@
                 <input id="edit_Shipment_Number" name="Shipment_Number" type="text" class="filter-input input-readonly" readonly>
             </div>
             <div class="select-wrapper full-width">
-                <label class="select-label">Current Status (Admin Managed)</label>
-                <input id="edit_Status" name="Status" type="text" class="filter-input input-readonly" readonly>
-            </div>
-            <div class="select-wrapper full-width">
                 <label class="select-label">Device ID</label>
                 <input id="edit_Device" name="Device" type="text" class="filter-input" required>
+            </div>
+            <div class="select-wrapper full-width">
+                <label class="select-label">Current Status (Managed by Admin)</label>
+                <input id="edit_Status" type="text" class="filter-input input-readonly status-locked" readonly>
             </div>
             <div class="select-wrapper span-2 full-width">
                 <label class="select-label">Route</label>
@@ -495,26 +497,6 @@
             const temp = (Math.random() * (25 - 18) + 18).toFixed(1);
             const time = new Date().toLocaleString(); 
 
-            const isOwner = currentUserEmail && s.created_by === currentUserEmail;
-
-            let actionsHtml = '';
-            if (isOwner) {
-                actionsHtml = `
-                    <!-- EDIT BUTTON -->
-                    <button class="btn-edit" onclick="openEditModal('${s.Shipment_Number}')" title="Edit Shipment">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <!-- DELETE BUTTON -->
-                    <button class="btn-delete" onclick="deleteShipment('${s.Shipment_Number}')" title="Delete Shipment">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                `;
-            } else {
-                actionsHtml = `
-                    <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">View Only</span>
-                `;
-            }
-
             const tr = document.createElement('tr');
             
             // Determine Badge Class
@@ -535,7 +517,14 @@
                 <td style="font-size:0.85rem; opacity:0.7;">${time}</td>
                 <td class="td-center">
                     <div class="action-container">
-                        ${actionsHtml}
+                        <!-- EDIT BUTTON -->
+                        <button class="btn-edit" onclick="openEditModal('${s.Shipment_Number}')" title="Edit Shipment">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <!-- DELETE BUTTON -->
+                        <button class="btn-delete" onclick="deleteShipment('${s.Shipment_Number}')" title="Delete Shipment">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
                     </div>
                 </td>
             `;
@@ -584,8 +573,10 @@
         document.getElementById('edit_NDC_Number').value = shipment.NDC_Number || "N/A";
         document.getElementById('edit_Serial_Number_of_Goods').value = shipment.Serial_Number_of_Goods || "N/A";
         document.getElementById('edit_Container_number').value = shipment.Container_number || "N/A";
+        document.getElementById('edit_Batch_ID').value = shipment.Batch_ID || "";
+        document.getElementById('edit_Shipment_Description').value = shipment.Shipment_Description || "";
         document.getElementById('edit_Status').value = shipment.Status || "In Transit";
-        
+
         // Date format fix
         if(shipment.Expected_Delivery_Date) {
             const d = new Date(shipment.Expected_Delivery_Date);

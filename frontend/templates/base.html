@@ -188,6 +188,29 @@
         .btn-modal-cancel { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; }
         .btn-modal-cancel:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
 
+        /* --- NOTIFICATION DRAWER --- */
+        .notif-drawer {
+            position: fixed; top: 0; right: -400px; width: 400px; height: 100%;
+            background: rgba(15, 23, 42, 0.95); -webkit-backdrop-filter: blur(25px); backdrop-filter: blur(25px);
+            border-left: 1px solid var(--glass-border); z-index: 10001;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5); transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            display: flex; flex-direction: column; text-align: left;
+        }
+        .notif-drawer.active { right: 0; }
+        .notif-header { padding: 1.5rem 2rem; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .notif-title { font-size: 1.1rem; font-weight: 700; color: white; display: flex; align-items: center; gap: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .notif-close { background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; transition: 0.3s; }
+        .notif-close:hover { color: white; }
+        .notif-list { flex: 1; overflow-y: auto; padding: 1.5rem; }
+        .notif-item { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; transition: 0.3s; }
+        .notif-item:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+        .notif-msg { color: #e2e8f0; font-size: 0.95rem; line-height: 1.6; margin-bottom: 10px; font-weight: 500; }
+        .notif-meta { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); font-family: monospace; }
+        .bell-btn { position: relative; background: none; border: none; font-size: 1.3rem; color: #94a3b8; cursor: pointer; padding: 10px; display: flex; align-items: center; transition: 0.3s; border-radius: 10px; }
+        .bell-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+        .bell-dot { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 10px #ef4444; display: none; }
+        .empty-notif { text-align: center; color: var(--text-muted); padding: 3rem 1rem; font-style: italic; font-size: 0.9rem; }
+
         /* Responsive */
         @media(max-width: 768px) {
             .navbar { flex-direction: column; gap: 1rem; }
@@ -200,6 +223,17 @@
     <!-- Programmable Background -->
     <canvas id="canvas-bg"></canvas>
     <div class="toast-container" id="toast-container"></div>
+
+    <!-- NOTIFICATION DRAWER -->
+    <div id="notif-drawer" class="notif-drawer">
+        <div class="notif-header">
+            <div class="notif-title"><i class="fa-solid fa-bullhorn color-primary"></i> Broadcast Feed</div>
+            <button class="notif-close" onclick="toggleNotifDrawer()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="notif-list" class="notif-list">
+             <!-- Notifs load here -->
+        </div>
+    </div>
 
     <!-- GLOBAL MODAL OVERLAY -->
     <div id="globalModalOverlay" class="global-modal-overlay">
@@ -345,14 +379,25 @@
                             roleBadge = `<span style="font-size:0.7rem; padding:2px 8px; border-radius:10px; background:rgba(248, 155, 41, 0.1); color:var(--accent); margin-left:5px; border:1px solid var(--accent); text-transform:uppercase; font-weight:600;">Admin</span>`;
                         }
 
+                        const bellHtml = `
+                            <button class="bell-btn" id="bell-btn" onclick="toggleNotifDrawer()">
+                                <i class="fa-solid fa-bell"></i>
+                                <span class="bell-dot" id="bell-dot"></span>
+                            </button>
+                        `;
+
                         nav.innerHTML = `
+                            ${bellHtml}
                             <a href="/dashboard" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
                             <a href="/create-shipment" class="nav-item"><i class="fa-solid fa-plus"></i> Create</a>
                             <a href="/my-shipments" class="nav-item"><i class="fa-solid fa-truck"></i> Shipments</a>
-                            <a href="/account" class="nav-item"><i class="fa-solid fa-user-astronaut"></i> Account ${roleBadge}</a>
                             ${adminLink}
+                            <a href="/account" class="nav-item"><i class="fa-solid fa-user-astronaut"></i> Account ${roleBadge}</a>
                             <button id="btn-logout" class="btn btn-ghost" style="margin-left:10px">Logout</button>
                         `;
+                        
+                        // Check for new broadcasts silently
+                        loadBroadcasts();
                         document.getElementById('btn-logout').addEventListener('click', async () => { 
                             try {
                                 await fetch('/api/v1/logout', { 
@@ -497,6 +542,53 @@
             closeBtn.textContent = 'DISMISS';
             closeBtn.onclick = closeGlobalModal;
         };
+        // --- 5. Broadcast Feed Logic ---
+        function toggleNotifDrawer() {
+            const drawer = document.getElementById('notif-drawer');
+            drawer.classList.toggle('active');
+            if(drawer.classList.contains('active')) {
+                const dot = document.getElementById('bell-dot');
+                if(dot) dot.style.display = 'none';
+                loadBroadcasts();
+            }
+        }
+
+        async function loadBroadcasts() {
+            const container = document.getElementById('notif-list');
+            if(!container) return;
+            
+            const res = await fetch('/api/v1/admin/broadcasts', {
+                headers: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            
+            if(res.ok) {
+                const broadcasts = await res.json();
+                if(!broadcasts || broadcasts.length === 0) {
+                    container.innerHTML = `<div class="empty-notif">No official broadcasts monitored in this cycle.</div>`;
+                    return;
+                }
+                
+                container.innerHTML = broadcasts.map(b => `
+                    <div class="notif-item">
+                        <div class="notif-msg">${b.message}</div>
+                        <div class="notif-meta">
+                            <span><i class="fa-solid fa-user-shield"></i> System Admin</span>
+                            <span>${new Date(b.timestamp).toLocaleString()}</span>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // If more broadcasts than last seen, show dot
+                const lastSeenCount = parseInt(localStorage.getItem('last_broadcast_count') || '0');
+                if(broadcasts.length > lastSeenCount) {
+                    const dot = document.getElementById('bell-dot');
+                    if(dot && !document.getElementById('notif-drawer').classList.contains('active')) {
+                        dot.style.display = 'block';
+                    }
+                }
+                localStorage.setItem('last_broadcast_count', broadcasts.length);
+            }
+        }
     </script>
     {% block scripts %}{% endblock %}
 </body>

@@ -18,13 +18,16 @@ async def create_shipment(shipment: ShipmentSchema = Body(...), token: str = Dep
     if shipment_dict.get("Expected_Delivery_Date"):
         shipment_dict["Expected_Delivery_Date"] = shipment_dict["Expected_Delivery_Date"].isoformat()
         
+    if not shipment_dict.get("Status"):
+        shipment_dict["Status"] = "In Transit"
+        
     shipment_dict["created_by"] = email
         
     await shipment_collection.insert_one(shipment_dict)
     return {"message": "Shipment created successfully"}
 
 @router.get("/shipments", dependencies=[Depends(JWTBearer())])
-async def get_shipments(token: str = Depends(JWTBearer())):
+async def get_shipments(all: bool = False, token: str = Depends(JWTBearer())):
     email = get_current_email(token)
     
     # Identify if user is admin
@@ -33,18 +36,13 @@ async def get_shipments(token: str = Depends(JWTBearer())):
     
     shipments = []
     
-    # Logic Update: Admins see everything. 
-    # Regular users see their own shipments AND shipments created by any admin.
-    if is_admin:
+    # RESTRICTED VIEW LOGIC:
+    # If ?all=true and the user is an admin, show global registry.
+    # Otherwise, strictly show only shipments created by the current user.
+    if all and is_admin:
         query = {}
     else:
-        # Find all admin emails
-        admin_users_cursor = user_collection.find({"is_admin": True}, {"email": 1})
-        admin_emails = [u["email"] async for u in admin_users_cursor]
-        query = {"$or": [
-            {"created_by": email},
-            {"created_by": {"$in": admin_emails}}
-        ]}
+        query = {"created_by": email}
     
     async for shipment in shipment_collection.find(query):
         shipment["_id"] = str(shipment["_id"])
@@ -91,12 +89,20 @@ async def update_shipment(shipment_number: str, shipment: ShipmentSchema = Body(
     # Convert Pydantic model to dict
     update_data = shipment.dict()
     
-    # --- SECURITY: LOCK STATUS TO ADMINS ONLY ---
-    # We ensure that the 'Status' field cannot be modified by standard users.
-    # If not an admin, we ignore any status sent in the payload and stick to the original state.
-    if not is_admin:
+    # --- SECURITY ENFORCEMENT ---
+    # Only admins can modify the 'Status' field.
+    if is_admin:
+        if update_data.get("Status"):
+             # Admin is explicitly setting a new status
+             pass 
+        else:
+             # Admin is editing other fields, preserve current status
+             update_data["Status"] = existing_shipment.get("Status", "In Transit")
+    else:
+        # Regular users cannot change status, always preserve existing from DB
         update_data["Status"] = existing_shipment.get("Status", "In Transit")
-
+    
+    # Preservation of ownership (Users cannot 'steal' shipments via updates)
     update_data["created_by"] = existing_shipment.get("created_by")
     
     # Ensure date is formatted correctly if present

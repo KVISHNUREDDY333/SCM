@@ -27,9 +27,7 @@ from backend.auth.google_verify import verify_google_token
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# AUTHORIZED ADMIN EMAILS
 ADMIN_EMAILS = ["vishnukamasani3@gmail.com"]
-
 
 # ---------- EMAIL HELPER FOR OTP ----------
 def send_otp_email(recipient_email: str, otp: str) -> None:

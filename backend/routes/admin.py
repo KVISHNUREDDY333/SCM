@@ -12,6 +12,7 @@ import io
 from datetime import datetime, timedelta
 
 router = APIRouter()
+SUPER_ADMIN_EMAIL = "vishnureddyk3333@gmail.com"
 
 async def log_admin_action(admin_email: str, action: str, details: str):
     """Helper to record administrative actions for the audit trail."""
@@ -52,18 +53,23 @@ async def get_all_users():
     return users
 
 @router.delete("/admin/users/{user_id}", dependencies=[Depends(VerifyAdmin())])
-async def delete_user(user_id: str):
-    """Deletes a user account."""
+async def delete_user(user_id: str, token: str = Depends(JWTBearer())):
+    """Deletes a user account. STRICT ACCESS: SUPER ADMIN ONLY."""
     try:
         obj_id = ObjectId(user_id)
     except:
         raise HTTPException(status_code=400, detail="Invalid User ID format")
 
+    decoded = decodeJWT(token)
+    current_admin_email = decoded.get("email")
+    if current_admin_email != SUPER_ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Only the main admin can delete users.")
+
     result = await user_collection.delete_one({"_id": obj_id})
     if result.deleted_count == 1:
         # LOG ACTION
-        await log_admin_action("system_admin", "DELETE_USER", f"Permanently deleted user ID {user_id}")
-        return {"message": "User deleted successfully"}
+        await log_admin_action(current_admin_email, "DELETE_USER", f"Permanently purged user registry entry ID {user_id}")
+        return {"message": "User purged by Super Admin."}
     
     raise HTTPException(status_code=404, detail="User not found")
 
@@ -82,20 +88,26 @@ async def update_user(user_id: str, payload: UserUpdateSchema, token: str = Depe
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    # --- HIERARCHY ENFORCEMENT ---
+    # Only the Super Admin can promote/demote or modify access roles.
+    if payload.is_admin is not None or payload.role is not None:
+        if current_user_email != SUPER_ADMIN_EMAIL:
+             raise HTTPException(status_code=403, detail="Insufficient Administrative Tier to manage roles.")
+
     # SELF-PROTECTION: Don't allow active admin to demote themselves
-    if user["email"] == current_user_email and payload.is_admin is False:
+    if user["email"] == current_user_email and (payload.is_admin is False or payload.role == "user"):
         raise HTTPException(status_code=400, detail="You cannot demote your own account status.")
 
     update_data = {k: v for k, v in payload.dict().items() if v is not None}
     if not update_data:
-        raise HTTPException(status_code=400, detail="No update data provided")
+        raise HTTPException(status_code=400, detail="No profile modifications specified.")
 
     await user_collection.update_one({"_id": obj_id}, {"$set": update_data})
     
     # LOG ACTION
-    await log_admin_action(current_user_email, "UPDATE_USER", f"Modified profile for {user['email']}: {update_data}")
+    await log_admin_action(current_user_email, "UPDATE_USER", f"Administrative Tier Action on {user['email']}: {update_data}")
     
-    return {"message": "User updated successfully"}
+    return {"message": "Identity modified successfully."}
 
 @router.get("/admin/system-health", dependencies=[Depends(VerifyAdmin())])
 async def get_system_health():
@@ -152,12 +164,24 @@ async def create_broadcast(payload: BroadcastSchema, token: str = Depends(JWTBea
     payload.admin_email = decoded.get("email")
     
     broadcast_dict = payload.dict()
+    # Add timestamp if not present
+    from datetime import datetime
+    broadcast_dict["timestamp"] = datetime.now().isoformat()
     await broadcast_collection.insert_one(broadcast_dict)
     
     # LOG ACTION
     await log_admin_action(payload.admin_email, "BROADCAST_CREATE", f"Broadcast Sent: {payload.message}")
     
     return {"message": "Broadcast transmitted successfully"}
+
+@router.get("/admin/broadcasts", dependencies=[Depends(JWTBearer())])
+async def get_broadcasts(limit: int = Query(50, ge=1, le=200)):
+    """Retrieves all historical broadcast messages."""
+    broadcasts = []
+    async for b in broadcast_collection.find().sort("timestamp", -1).limit(limit):
+        b["_id"] = str(b["_id"])
+        broadcasts.append(b)
+    return broadcasts
 
 @router.post("/admin/maintenance", dependencies=[Depends(VerifyAdmin())])
 async def toggle_maintenance(payload: MaintenanceSchema, token: str = Depends(JWTBearer())):

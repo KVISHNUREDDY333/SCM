@@ -91,12 +91,29 @@
         padding: 2rem;
         border: 1px solid var(--glass-border);
     }
-    .section-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
+    .section-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
     
     .data-table { width: 100%; border-collapse: collapse; }
-    .data-table th { text-align: left; padding: 1rem; border-bottom: 1px solid var(--glass-border); color: var(--text-muted); font-weight: 500; font-size: 0.85rem; text-transform: uppercase; }
+    .data-table th { text-align: left; padding: 1rem; border-bottom: 1px solid var(--glass-border); color: var(--text-muted); font-weight: 500; font-size: 0.85rem; text-transform: uppercase; position: sticky; top: 0; z-index: 10; background: #0b1120; }
     .data-table td { padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.03); color: #cbd5e1; font-size: 0.95rem; }
     .data-table tr:hover { background: rgba(255,255,255,0.02); }
+
+    /* --- SCROLLBAR REFINEMENTS --- */
+    .table-responsive {
+        max-height: 550px;
+        overflow-y: auto;
+        overflow-x: auto;
+        border-radius: 12px;
+        border: 1px solid var(--glass-border);
+        position: relative;
+    }
+    .table-responsive::-webkit-scrollbar { width: 6px; height: 6px; }
+    .table-responsive::-webkit-scrollbar-track { background: transparent; }
+    .table-responsive::-webkit-scrollbar-thumb { 
+        background: linear-gradient(135deg, rgba(59, 91, 219, 0.2) 0%, rgba(0, 210, 255, 0.2) 100%);
+        border-radius: 10px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb:hover { background: rgba(0, 210, 255, 0.5); }
 
     /* --- TACTICAL REFINEMENTS --- */
     .tactical-actions-bar {
@@ -120,11 +137,14 @@
 
     .stats-row {
         display: flex;
-        gap: 1.5rem;
+        gap: 0.75rem;
+        flex-wrap: nowrap;
+        margin-bottom: 1.5rem;
     }
     .stats-row .stat-card {
         flex: 1;
         min-width: 0;
+        padding: 1rem 0.75rem;
     }
 
     .tag { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
@@ -136,18 +156,19 @@
 
     /* --- STATUS BADGES --- */
     .badge-status { 
-        padding: 4px 12px; 
-        border-radius: 6px; 
-        font-size: 0.75rem; 
-        font-weight: 700; 
+        padding: 5px 14px; 
+        border-radius: 50px; 
+        font-size: 0.7rem; 
+        font-weight: 800; 
         text-transform: uppercase;
         display: inline-block;
-        letter-spacing: 0.5px;
+        letter-spacing: 1px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
-    .badge-transit { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .badge-delayed { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge-delivered { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-cancelled { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-transit { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .badge-delayed { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-delivered { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .badge-cancelled { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
 
     .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); font-style: italic; }
 
@@ -166,8 +187,8 @@
     /* --- PROFESSIONAL ENHANCEMENTS --- */
     .system-status-bar {
         display: flex; gap: 1.5rem; background: rgba(255,255,255,0.02);
-        padding: 0.8rem 1.5rem; border-radius: 50px; border: 1px solid var(--glass-border);
-        align-items: center; margin-bottom: 2rem; width: fit-content;
+        padding: 0.5rem 1.2rem; border-radius: 50px; border: 1px solid var(--glass-border);
+        align-items: center; width: fit-content;
     }
     .status-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; }
     .status-pip { width: 10px; height: 10px; border-radius: 50%; background: #ccc; box-shadow: 0 0 10px rgba(255,255,255,0.2); }
@@ -263,7 +284,7 @@
     .admin-tabs { 
         display: flex; 
         gap: 0.5rem; 
-        margin-bottom: 2rem; 
+        margin-bottom: 1rem; 
         border-bottom: 1px solid var(--glass-border); 
         padding-bottom: 0.5rem;
         overflow-x: auto;
@@ -291,8 +312,8 @@
     .tab-content.active { display: block; animation: fadeIn 0.4s ease-out; }
     
     /* --- UTILITIES & FIT --- */
-    .mb-3 { margin-bottom: 3rem !important; }
-    .mt-3 { margin-top: 3rem !important; }
+    .mb-3 { margin-bottom: 1.5rem !important; }
+    .mt-3 { margin-top: 1.5rem !important; }
     .w-100 { width: 100% !important; }
     
     .hide-scrollbar {
@@ -301,7 +322,7 @@
     .hide-scrollbar::-webkit-scrollbar { display: none; }
 
     /* --- MAINTENANCE TOGGLE --- */
-    .maint-mode-card { display: flex; align-items: center; gap: 15px; padding: 0.5rem 1.2rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 50px; }
+    .maint-mode-card { display: flex; align-items: center; gap: 10px; padding: 0.5rem 1.2rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 50px; }
     .maint-mode-card.active { background: #ef4444; color: white; border-color: #ef4444; }
     .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
     .switch input { opacity: 0; width: 0; height: 0; }
@@ -337,6 +358,92 @@
     }
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* --- ADMIN FILTER STYLES --- */
+    .admin-filter-card {
+        background: rgba(15, 23, 42, 0.4);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: var(--card-radius);
+        padding: 1.5rem 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        align-items: flex-end;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        transition: transform 0.3s ease;
+    }
+    .admin-link:hover .admin-filter-card { transform: translateY(-2px); }
+    .filter-category-group { flex: 0.8; min-width: 200px; }
+
+    .filter-group { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 220px; }
+    .filter-label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* --- UNIVERSAL DROPDOWN THEME --- */
+    select, .filter-input, .form-input, .filter-input option, select option { 
+        background-color: #0f172a !important; 
+        color: white !important; 
+        color-scheme: dark !important; 
+    }
+    .filter-input:focus, .form-input:focus { border-color: var(--primary); outline: none; background: rgba(15, 23, 42, 0.8); }
+    
+    .stat-icon { font-size: 1.4rem; color: var(--primary); background: rgba(0,255,255,0.05); width: 40px; height: 30px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    
+    .icon-transit { color: var(--primary) !important; background: rgba(0, 255, 255, 0.05) !important; }
+    .icon-delayed { color: #f59e0b !important; background: rgba(245, 158, 11, 0.05) !important; }
+    .icon-delivered { color: #10b981 !important; background: rgba(16, 185, 129, 0.05) !important; }
+    .icon-cancelled { color: #ef4444 !important; background: rgba(239, 68, 68, 0.05) !important; }
+
+    .border-bottom-transit { border-bottom: 3px solid var(--primary) !important; }
+    .border-bottom-delayed { border-bottom: 3px solid #f59e0b !important; }
+    .border-bottom-delivered { border-bottom: 3px solid #10b981 !important; }
+    .border-bottom-cancelled { border-bottom: 3px solid #ef4444 !important; }
+
+    .stat-info h3 { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stat-val { font-size: 1.2rem !important; }
+
+    .btn-search { 
+        background: #4361ee; 
+        color: white; 
+        padding: 5px 25px; 
+        border-radius: 50px; 
+        font-weight: 700; 
+        cursor: pointer; 
+        border: none; 
+        transition: all 0.3s ease; 
+        height: 38px; 
+        display: flex; 
+        align-items: center; 
+        gap: 10px;
+        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.2);
+        letter-spacing: 0.5px;
+        font-size: 0.85rem;
+    }
+    .btn-search:hover { 
+        background: #3751d3; 
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+    }
+    .btn-search i { font-size: 0.9rem; }
+
+    .btn-reset-filter { 
+        background: rgba(30, 41, 59, 1); 
+        color: white; 
+        padding: 5px 20px; 
+        border-radius: 50px; 
+        border: 1px solid rgba(255,255,255,0.2); 
+        cursor: pointer; 
+        transition: 0.3s; 
+        height: 38px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        font-size: 0.8rem;
+    }
+    .btn-reset-filter:hover { background: rgba(255,255,255,0.05); border-color: white; }
+
+    .filter-input { height: 38px !important; font-size: 0.9rem !important; padding: 8px 15px !important; }
 
 </style>
 
@@ -367,6 +474,41 @@
         </div>
     </div>
 
+    <!-- GLOBAL MISSION METRICS (Always Visible) -->
+    <div class="stats-row" id="stats-container">
+        <!-- System Stats -->
+        <div class="stat-card">
+             <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+             <div class="stat-info"><h3>Total Users</h3><div class="stat-val" id="val-users">--</div></div>
+        </div>
+        <div class="stat-card">
+             <div class="stat-icon"><i class="fa-solid fa-box-open"></i></div>
+             <div class="stat-info"><h3>Total Active Shipments</h3><div class="stat-val" id="val-shipments">--</div></div>
+        </div>
+        <div class="stat-card">
+             <div class="stat-icon"><i class="fa-solid fa-microchip"></i></div>
+             <div class="stat-info"><h3>Active Devices (via Kafka)</h3><div class="stat-val" id="val-devices">--</div></div>
+        </div>
+        
+        <!-- Status Breakdown -->
+        <div class="stat-card border-bottom-transit">
+             <div class="stat-icon icon-transit"><i class="fa-solid fa-truck-fast"></i></div>
+             <div class="stat-info"><h3>In Transit</h3><div class="stat-val" id="count-transit">0</div></div>
+        </div>
+        <div class="stat-card border-bottom-delayed">
+             <div class="stat-icon icon-delayed"><i class="fa-solid fa-triangle-exclamation"></i></div>
+             <div class="stat-info"><h3>Delayed</h3><div class="stat-val" id="count-delayed">0</div></div>
+        </div>
+        <div class="stat-card border-bottom-delivered">
+             <div class="stat-icon icon-delivered"><i class="fa-solid fa-circle-check"></i></div>
+             <div class="stat-info"><h3>Delivered</h3><div class="stat-val" id="count-delivered">0</div></div>
+        </div>
+        <div class="stat-card border-bottom-cancelled">
+             <div class="stat-icon icon-cancelled"><i class="fa-solid fa-circle-xmark"></i></div>
+             <div class="stat-info"><h3>Cancelled</h3><div class="stat-val" id="count-cancelled">0</div></div>
+        </div>
+    </div>
+
     <!-- ENTERPRISE TAB NAVIGATION -->
     <div class="admin-tabs hide-scrollbar">
         <button class="tab-btn active" onclick="switchTab('tab-users', this)"><i class="fa-solid fa-users"></i> Users Control (Command Center)</button>
@@ -375,23 +517,19 @@
         <button class="tab-btn" onclick="switchTab('tab-audit', this)"><i class="fa-solid fa-shield-halved"></i> Security Audit (Anomaly Radar)</button>
     </div>
 
-
     <!-- TAB 1: USERS -->
     <div id="tab-users" class="tab-content active">
         <div class="tactical-actions-bar mb-3">
-            <div class="tactical-header">
-                <i class="fa-solid fa-terminal"></i> Broadcast Engine
-            </div>
+            <div class="tactical-header"><i class="fa-solid fa-terminal"></i> Broadcast Engine</div>
             <div class="enterprise-actions">
                 <button class="btn-ent btn-broadcast" onclick="openBroadcastModal()"><i class="fa-solid fa-bullhorn"></i> Global Announcement Broadcast</button>
             </div>
         </div>
-
         <div class="admin-section">
             <div class="section-title"><i class="fa-solid fa-user-gear color-primary"></i> Registry Control</div>
             <div class="table-responsive">
                 <table class="data-table">
-                    <thead><tr><th>Administrative Identity</th><th>Access Tier</th><th>Last Mission Log</th><th>Command Action</th></tr></thead>
+                    <thead><tr><th>Administrative Identity</th><th>Access Tier</th><th>Last Mission Log</th><th id="th-command-action">Command Action</th></tr></thead>
                     <tbody id="user-table-body"></tbody>
                 </table>
             </div>
@@ -400,24 +538,37 @@
 
     <!-- TAB 2: GLOBAL SHIPMENTS (Shipment Master) -->
     <div id="tab-shipments" class="tab-content">
-        <!-- LIVE AGGREGATION METRICS -->
-        <div class="stats-row mb-3" id="stats-container">
-            <div class="stat-card">
-                 <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
-                 <div class="stat-info"><h3>Total Users</h3><div class="stat-val" id="val-users">--</div></div>
-            </div>
-            <div class="stat-card">
-                 <div class="stat-icon"><i class="fa-solid fa-box-open"></i></div>
-                 <div class="stat-info"><h3>Total Active Shipments</h3><div class="stat-val" id="val-shipments">--</div></div>
-            </div>
-            <div class="stat-card">
-                 <div class="stat-icon"><i class="fa-solid fa-microchip"></i></div>
-                 <div class="stat-info"><h3>Active Devices (via Kafka)</h3><div class="stat-val" id="val-devices">--</div></div>
-            </div>
-        </div>
 
         <div class="admin-section">
             <div class="section-title"><i class="fa-solid fa-earth-americas color-primary"></i> Global Master Registry (Shipment Master)</div>
+            
+            <!-- SEARCH / FILTER SECTION -->
+            <div class="admin-filter-card">
+                <div class="filter-group filter-category-group">
+                    <label class="filter-label">Search By (Key)</label>
+                    <select id="globalSearchKey" class="filter-input" onchange="toggleFilterInput()">
+                        <option value="Shipment_Number" selected>Shipment Number</option>
+                        <option value="Status">Status</option>
+                        <option value="Device">Device Id</option>
+                        <option value="created_by">Creator</option>
+                        <option value="Container_number">Container Number</option>
+                        <option value="Po_Number">PO Number</option>
+                        <option value="Route_Details">Route</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group" id="filterValueContainer">
+                    <label class="filter-label">Search Value</label>
+                    <input type="text" id="globalSearchValue" class="filter-input" placeholder="Enter value (e.g., SHP-1001)...">
+                </div>
+
+                <button class="btn-search" onclick="performGlobalSearch()">
+                    <i class="fa-solid fa-magnifying-glass"></i> SEARCH
+                </button>
+                <button class="btn-reset-filter" onclick="resetGlobalSearch()">
+                    RESET
+                </button>
+            </div>
             <div class="table-responsive">
                 <table class="data-table">
                     <thead><tr><th>Number</th><th>Creator</th><th>Route</th><th>Current Status</th><th>Master Override / Purge</th></tr></thead>
@@ -768,10 +919,30 @@
                 const roleClass = u.is_admin ? 'tag-admin' : 'tag-user';
                 const roleLabel = u.is_admin ? 'ADMIN' : 'USER';
                 
+                const isSuperAdmin = currentUserEmail === "vishnureddyk3333@gmail.com";
                 const isMe = u.email === currentUserEmail;
                 const toggleIcon = u.is_admin ? '<i class="fa-solid fa-user-minus"></i>' : '<i class="fa-solid fa-user-plus"></i>';
                 const toggleClass = u.is_admin ? 'btn-demote' : 'btn-promote';
                 const toggleTitle = u.is_admin ? 'Demote to User' : 'Promote to Admin';
+
+                // HIDE COLUMN HEADER IF NOT SUPER ADMIN
+                const thAction = document.getElementById('th-command-action');
+                if(thAction) thAction.style.display = isSuperAdmin ? '' : 'none';
+
+                let actionColumnHtml = '';
+                if (isSuperAdmin) {
+                    actionColumnHtml = `
+                        <td>
+                            <div class="user-actions-flex">
+                                <button class="btn-action btn-edit-usr" onclick="openUserModal('${u._id}', '${u.username}', '${u.email}')" title="Edit Profile">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button class="btn-action ${toggleClass}" onclick="toggleRole('${u._id}', ${!u.is_admin})" title="${toggleTitle}">${toggleIcon}</button>
+                                <button class="btn-sm-del" onclick="deleteUser('${u._id}', '${u.email}')" title="Delete User"><i class="fa-solid fa-user-xmark"></i></button>
+                            </div>
+                        </td>
+                    `;
+                }
 
                 tr.innerHTML = `
                     <td>
@@ -780,13 +951,7 @@
                     </td>
                     <td><span class="tag ${roleClass}">${roleLabel} ${isMe ? '(Me)' : ''}</span></td>
                     <td>${lastSeen}</td>
-                    <td>
-                        <div class="user-actions-flex">
-                            <button class="btn-action btn-edit-usr" onclick="openUserModal('${u._id}', '${u.username}', '${u.email}')" title="Edit Profile"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button class="btn-action ${toggleClass}" onclick="toggleRole('${u._id}', ${!u.is_admin})" title="${toggleTitle}">${toggleIcon}</button>
-                            <button class="btn-sm-del" onclick="deleteUser('${u._id}', '${u.email}')" title="Delete User"><i class="fa-solid fa-user-xmark"></i></button>
-                        </div>
-                    </td>
+                    ${actionColumnHtml}
                 `;
                 tbody.appendChild(tr);
             });
@@ -830,18 +995,61 @@
 
     // 3. Load Global Shipments (Leveraging the newly admin-aware get_shipments)
     async function loadGlobalShipments() {
-        const res = await getJSON('/api/v1/shipments');
+        const res = await getJSON('/api/v1/shipments?all=true');
         if(res.ok) {
             allShipments = await res.json();
+            renderGlobalTable(allShipments);
+            updateStatusMetrics(allShipments); // Always update boxes from Global Totals
+        }
+    }
+
+    function updateStatusMetrics(allData) {
+        const metrics = { 'transit': 0, 'delayed': 0, 'delivered': 0, 'cancelled': 0 };
+        if(allData && allData.length > 0) {
+            allData.forEach(s => {
+                const sRaw = (s.Status || 'In Transit').toLowerCase();
+                if(sRaw.includes('transit')) metrics['transit']++;
+                else if(sRaw.includes('delayed')) metrics['delayed']++;
+                else if(sRaw.includes('delivered')) metrics['delivered']++;
+                else if(sRaw.includes('cancelled')) metrics['cancelled']++;
+                else metrics['transit']++; // Default to transit for any unknown string
+            });
+        }
+        
+        // Update UI counters (IDs must match HTML precisely)
+        const transitEl = document.getElementById('count-transit');
+        const delayedEl = document.getElementById('count-delayed');
+        const deliveredEl = document.getElementById('count-delivered');
+        const cancelledEl = document.getElementById('count-cancelled');
+
+        if(transitEl) transitEl.textContent = metrics['transit'];
+        if(delayedEl) delayedEl.textContent = metrics['delayed'];
+        if(deliveredEl) deliveredEl.textContent = metrics['delivered'];
+        if(cancelledEl) cancelledEl.textContent = metrics['cancelled'];
+        
+        // Also update the "Total Active Shipments" card from the actual data array for 100% parity
+        const totalBox = document.getElementById('val-shipments');
+        if(totalBox) totalBox.textContent = allData.length;
+    }
+
+    function renderGlobalTable(data) {
             const tbody = document.getElementById('shipment-table-body');
             tbody.innerHTML = '';
             
-            allShipments.slice(-10).reverse().forEach(s => {
+            if(!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No shipments match your current filter.</td></tr>';
+                return;
+            }
+
+            // We show all matching data, reversed so newest is on top.
+            [...data].reverse().forEach(s => {
                 const tr = document.createElement('tr');
+                
+                // Track Status for badge class
+                const status = s.Status || 'In Transit';
                 
                 // Determine Badge Class
                 let badgeClass = 'badge-transit';
-                const status = s.Status || 'In Transit';
                 if(status === 'Delayed') badgeClass = 'badge-delayed';
                 if(status === 'Delivered') badgeClass = 'badge-delivered';
                 if(status === 'Cancelled') badgeClass = 'badge-cancelled';
@@ -860,7 +1068,64 @@
                 `;
                 tbody.appendChild(tr);
             });
+    }
+
+    // --- SEARCH LOGIC ---
+    function toggleFilterInput() {
+        const key = document.getElementById('globalSearchKey').value;
+        const container = document.getElementById('filterValueContainer');
+        
+        if(key === 'Route_Details') {
+            container.innerHTML = `
+                <label class="filter-label">Select Route</label>
+                <select id="globalSearchValue" class="filter-input">
+                    <option value="">-- Select Predefined Route --</option>
+                    <option>Newyork, USA → Chennai, India</option>
+                    <option>Chennai, India → Newyork, USA</option>
+                    <option>Chennai, India → London, UK</option>
+                    <option>Bengaluru, India → Newyork, USA</option>
+                    <option>London, UK → Chennai, India</option>
+                    <option>Newyork, USA → London, UK</option>
+                    <option>Bengaluru, India → London, UK</option>
+                    <option>Newyork, USA → Bengaluru, India</option>
+                    <option>Chennai, India → Bengaluru, India</option>
+                    <option>London, UK → Bengaluru, India</option>
+                    <option>Bengaluru, India → Chennai, India</option>
+                    <option>London, UK → Newyork, USA</option>
+                </select>
+            `;
+        } else {
+            container.innerHTML = `
+                <label class="filter-label">Search Value</label>
+                <input type="text" id="globalSearchValue" class="filter-input" placeholder="Enter value (e.g., SHP-1001)...">
+            `;
         }
+    }
+
+    function performGlobalSearch() {
+        const key = document.getElementById('globalSearchKey').value;
+        const val = document.getElementById('globalSearchValue').value.toLowerCase().trim();
+
+        if(!val) {
+            renderGlobalTable(allShipments);
+            return;
+        }
+
+        const filtered = allShipments.filter(s => {
+            const itemValue = String(s[key] || '').toLowerCase();
+            return itemValue.includes(val);
+        });
+
+        renderGlobalTable(filtered);
+        addLog(`System Registry filtered by ${key}: "${val}"`);
+    }
+
+    function resetGlobalSearch() {
+        document.getElementById('globalSearchKey').value = 'Shipment_Number';
+        toggleFilterInput();
+        document.getElementById('globalSearchValue').value = '';
+        renderGlobalTable(allShipments);
+        addLog('System Registry filter reset to default view.');
     }
 
     let allShipments = [];
@@ -910,8 +1175,10 @@
         if(res.ok) {
             addLog(`Shipment ${num} successfully modified via Master Override.`);
             closeShipmentModal();
-            loadGlobalShipments();
-            showGlobalModal('Master Override Success', `Registry updated for ${num}`, 'success');
+            // RE-INITIALIZE ALL SHIPMENT TABLES & METRICS INSTANTLY
+            await loadGlobalShipments();
+            await loadStats(); 
+            showGlobalModal('Master Override Success', `Registry states updated for ${num}`, 'success');
         } else {
             showGlobalModal('Override Failed', "Critical error during registry modification.", 'error');
         }
