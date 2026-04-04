@@ -113,6 +113,20 @@ async def serve_my_shipments(request: Request):
 
 @app.get("/data-stream")
 async def serve_data_stream(request: Request):
+    token = request.cookies.get("scm_token")
+    if not token:
+        return RedirectResponse("/")
+    
+    from backend.auth.jwt_handler import decodeJWT
+    decoded = decodeJWT(token)
+    if not decoded:
+        return RedirectResponse("/")
+        
+    from backend.config.database import user_collection
+    user = await user_collection.find_one({"email": decoded.get("email")})
+    if not user or not user.get("is_admin"):
+        return RedirectResponse("/dashboard")
+        
     return templates.TemplateResponse(request=request, name="data_stream.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
 
 @app.get("/account")

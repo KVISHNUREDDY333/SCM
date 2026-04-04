@@ -8,7 +8,7 @@
         display: grid;
         grid-template-columns: 380px 1fr; /* Left Fixed, Right Flexible */
         gap: 1.5rem;
-        align-items: start; /* Prevent cards from stretching strictly if content differs */
+        align-items: start;
     }
 
     /* Stack on smaller screens */
@@ -17,49 +17,94 @@
             grid-template-columns: 1fr;
         }
     }
+
+    /* Header Section */
+    .dashboard-header { margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; }
+    .dashboard-title { font-weight: 700; font-size: 2.5rem; }
+    .dashboard-subtitle { color: var(--text-muted); }
+
+    /* Left Panel Styles */
+    .op-center-card { display: flex; flex-direction: column; gap: 1.5rem; height: 100%; }
+    .op-center-title { color: var(--primary); font-size: 1.3rem; }
+    .op-center-desc { color: var(--text-muted); font-size: 0.9rem; margin-top: -10px; }
+    .op-actions-container { display: grid; gap: 4rem; margin-top: auto; }
+    .op-btn-full { justify-content: center; width: 100%; padding: 1rem; }
+
+    /* Right Panel Styles */
+    .shipments-card { min-height: 500px; }
+    .shipments-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .section-title { font-size: 1.3rem; }
+    .view-all-link { color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+    .shipments-list { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 0.8rem; 
+        max-height: 420px;
+        overflow-y: auto;
+        padding-right: 8px;
+    }
+    
+    /* Modern Webkit Scrollbar */
+    .shipments-list::-webkit-scrollbar { 
+        width: 10px; 
+    }
+    .shipments-list::-webkit-scrollbar-track { 
+        background: rgba(15, 23, 42, 0.4); 
+        border-radius: 10px;
+    }
+    .shipments-list::-webkit-scrollbar-thumb { 
+        background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .shipments-list::-webkit-scrollbar-thumb:hover { 
+        background: var(--primary);
+    }
+    
+    .loader-container { text-align: center; padding: 4rem; color: var(--text-muted); }
 </style>
 
 <section>
     <!-- Page Header -->
-    <div style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
-        <h1 style="font-weight: 700; font-size: 2.5rem;">Dashboard</h1>
-        <p style="color: var(--text-muted);">Overview of supply chain operations</p>
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Dashboard</h1>
+        <p class="dashboard-subtitle">Overview of supply chain operations</p>
     </div>
 
     <div class="dashboard-grid">
         
         <!-- LEFT PANEL: Operations Center -->
-        <div class="glass-card" style="display:flex; flex-direction:column; gap:1.5rem; height: 100%;">
-            <h3 style="color: var(--primary); font-size: 1.3rem;">
+        <div class="glass-card op-center-card">
+            <h3 class="op-center-title">
                 <i class="fa-solid fa-bolt"></i> Operations Center
             </h3>
             
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: -10px;">
+            <p class="op-center-desc">
                 Quick access to core logistics functions.
             </p>
 
-            <div style="display:grid; gap:4rem; margin-top: auto;">
-                <a href="/create-shipment" class="btn btn-primary" style="justify-content:center; width: 100%; padding: 1rem;">
+            <div class="op-actions-container">
+                <a href="/create-shipment" class="btn btn-primary op-btn-full">
                     <i class="fa-solid fa-plus-circle"></i> New Shipment
                 </a>
-                <a href="/my-shipments" class="btn btn-ghost" style="justify-content:center; width: 100%; padding: 1rem;">
+                <a href="/my-shipments" class="btn btn-ghost op-btn-full">
                     <i class="fa-solid fa-list-ul"></i> View Inventory
                 </a>
-                <a href="/data-stream" class="btn btn-ghost" style="justify-content:center; width: 100%; padding: 1rem;">
+                <a id="liveTelemetryBtn" href="/data-stream" class="btn btn-ghost op-btn-full">
                     <i class="fa-solid fa-tower-broadcast"></i> Live Telemetry
                 </a>
             </div>
         </div>
 
         <!-- RIGHT PANEL: Recent Shipments -->
-        <div class="glass-card" style="min-height: 500px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h3 style="font-size: 1.3rem;"><i class="fa-solid fa-clock-rotate-left"></i> Recent Shipments</h3>
-                <a href="/my-shipments" style="color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 600;">View All <i class="fa-solid fa-arrow-right"></i></a>
+        <div class="glass-card shipments-card">
+            <div class="shipments-header">
+                <h3 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Shipments</h3>
+                <a href="/my-shipments" class="view-all-link">View All <i class="fa-solid fa-arrow-right"></i></a>
             </div>
 
-            <div id="recentShipments" style="display:flex; flex-direction:column; gap:0.8rem;">
-                <div style="text-align:center; padding:4rem; color:var(--text-muted);">
+            <div id="recentShipments" class="shipments-list">
+                <div class="loader-container">
                     <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><br><br>Syncing Data...
                 </div>
             </div>
@@ -71,6 +116,12 @@
 {% block scripts %}
 <script>
     (async function(){
+        // Hide Live Telemetry if not admin
+        if(localStorage.getItem('user_role') !== 'admin') {
+            const ltb = document.getElementById('liveTelemetryBtn');
+            if(ltb) ltb.style.display = 'none';
+        }
+        
         const el = document.getElementById('recentShipments');
         try {
             const res = await getJSON('/api/v1/shipments');

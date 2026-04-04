@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Body, HTTPException, Depends, Request, Header
+from fastapi import APIRouter, Body, HTTPException, Depends, Request, Header, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 import secrets
@@ -15,7 +15,7 @@ from backend.models.user import (
     ForgotPasswordSchema, 
     ResetPasswordSchema
 )
-from backend.config.database import user_collection, otp_collection
+from backend.config.database import user_collection, otp_collection, session_collection
 from backend.auth.jwt_handler import signJWT, decodeJWT
 from backend.middleware.security import JWTBearer
 from backend.config.limiter import limiter
@@ -26,6 +26,9 @@ from backend.auth.google_verify import verify_google_token
 
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# AUTHORIZED ADMIN EMAILS
+ADMIN_EMAILS = ["vishnukamasani3@gmail.com"]
 
 
 # ---------- EMAIL HELPER FOR OTP ----------
@@ -93,7 +96,7 @@ def send_otp_email(recipient_email: str, otp: str) -> None:
 # --- 1. SIGNUP ROUTE ---
 @router.post("/signup")
 @limiter.limit("5/minute") 
-async def create_user(request: Request, users: UserSchema = Body(...)):
+async def create_user(request: Request, response: Response, users: UserSchema = Body(...)):
     # Check if user exists
     if await user_collection.find_one({"email": users.email}):
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -106,18 +109,34 @@ async def create_user(request: Request, users: UserSchema = Body(...)):
         "email": users.email,
         "password": hashed_password,
         "auth_provider": "local",
-        "last_login": datetime.now().isoformat() # FIX: Set initial login time
+        "last_login": datetime.now().isoformat(),
+        "is_admin": users.email in ADMIN_EMAILS,
+        "role": "admin" if users.email in ADMIN_EMAILS else "user"
     }
     
     # Save to DB
     new_user = await user_collection.insert_one(user_dict)
-    return signJWT(str(new_user.inserted_id), users.email)
+    resp = signJWT(str(new_user.inserted_id), users.email)
+    
+    # Register Session
+    await session_collection.insert_one({
+        "access_token": resp["access_token"],
+        "email": users.email,
+        "user_id": str(new_user.inserted_id),
+        "created_at": datetime.now()
+    })
+    
+    # Set Cookie for SSE
+    response.set_cookie(key="scm_token", value=resp["access_token"], httponly=True, samesite="lax")
+    
+    return resp
 
 # --- 2. LOGIN ROUTE ---
 @router.post("/token")
 @limiter.limit("10/minute")
 async def login(
     request: Request, 
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     x_recaptcha_token: str = Header(None) 
 ):
@@ -139,14 +158,27 @@ async def login(
             {"$set": {"last_login": datetime.now().isoformat()}}
         )
         
-        return signJWT(str(user["_id"]), user["email"])
+        resp = signJWT(str(user["_id"]), user["email"])
+        
+        # Register Session
+        await session_collection.insert_one({
+            "access_token": resp["access_token"],
+            "email": user["email"],
+            "user_id": str(user["_id"]),
+            "created_at": datetime.now()
+        })
+        
+        # Set Cookie for SSE
+        response.set_cookie(key="scm_token", value=resp["access_token"], httponly=True, samesite="lax")
+        
+        return resp
     
     raise HTTPException(status_code=401, detail="Invalid login details")
 
 # --- 3. GOOGLE AUTH ROUTE ---
 @router.post("/auth/google")
 @limiter.limit("20/minute")
-async def google_login(request: Request, payload: GoogleAuthSchema):
+async def google_login(request: Request, response: Response, payload: GoogleAuthSchema):
     google_data = verify_google_token(payload.id_token)
     
     if not google_data:
@@ -172,7 +204,9 @@ async def google_login(request: Request, payload: GoogleAuthSchema):
             "email": email,
             "password": hashed_password,
             "auth_provider": "google",
-            "last_login": current_time # FIX: Set time for new Google user
+            "last_login": current_time,
+            "is_admin": email in ADMIN_EMAILS,
+            "role": "admin" if email in ADMIN_EMAILS else "user"
         }
         
         new_user = await user_collection.insert_one(new_user_dict)
@@ -185,7 +219,20 @@ async def google_login(request: Request, payload: GoogleAuthSchema):
         )
         user_id = str(user["_id"])
 
-    return signJWT(user_id, email)
+    resp = signJWT(user_id, email)
+    
+    # Register Session
+    await session_collection.insert_one({
+        "access_token": resp["access_token"],
+        "email": email,
+        "user_id": user_id,
+        "created_at": datetime.now()
+    })
+    
+    # Set Cookie for SSE
+    response.set_cookie(key="scm_token", value=resp["access_token"], httponly=True, samesite="lax")
+    
+    return resp
 
 # --- 4. PASSWORD RESET LOGIC ---
 def generate_otp():
@@ -268,3 +315,9 @@ async def get_current_user(token: str = Depends(JWTBearer())):
             "role": user.get("role", "user")
         }
     raise HTTPException(status_code=404, detail="User not found")
+# --- 6. LOGOUT ROUTE ---
+@router.post("/logout", dependencies=[Depends(JWTBearer())])
+async def logout(token: str = Depends(JWTBearer())):
+    # Delete session from DB
+    await session_collection.delete_one({"access_token": token})
+    return {"message": "Logged out successfully"}

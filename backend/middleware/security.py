@@ -2,7 +2,7 @@ from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.base import BaseHTTPMiddleware
 from backend.auth.jwt_handler import decodeJWT
-from backend.config.database import user_collection
+from backend.config.database import user_collection, session_collection
 import os
 from dotenv import load_dotenv
 
@@ -15,9 +15,19 @@ class JWTBearer(HTTPBearer):
         if credentials:
             if not credentials.scheme == "Bearer":
                 raise HTTPException(status_code=403, detail="Invalid authentication scheme.")
-            if not decodeJWT(credentials.credentials):
+            
+            token = credentials.credentials
+            
+            # 1. Base JWT decoding and expiry check
+            if not decodeJWT(token):
                 raise HTTPException(status_code=403, detail="Invalid or expired token.")
-            return credentials.credentials
+            
+            # 2. Stateful session check (Must exist in database)
+            session = await session_collection.find_one({"access_token": token})
+            if not session:
+                raise HTTPException(status_code=403, detail="Session expired or logged out.")
+            
+            return token
         else:
             raise HTTPException(status_code=403, detail="Invalid authorization code.")
 

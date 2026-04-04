@@ -79,7 +79,8 @@
     /* Table Styles */
     .data-table {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate; /* Required for reliable sticky headers */
+        border-spacing: 0;
         font-size: 1rem;
     }
 
@@ -91,6 +92,10 @@
         font-weight: 600;
         text-transform: capitalize;
         letter-spacing: 0.5px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 2px solid rgba(0,0,0,0.1);
     }
 
     .data-table thead th:first-child { border-top-left-radius: 10px; }
@@ -164,12 +169,25 @@
     .modal-content {
         background: #0f172a;
         border: 1px solid rgba(255,255,255,0.1);
-        width: 800px; max-width: 90%; max-height: 90vh; overflow-y: auto;
-        padding: 2rem; border-radius: 16px;
+        width: 1100px; 
+        max-width: 95%; 
+        max-height: 98vh; 
+        overflow-y: hidden; 
+        padding: 1.5rem; 
+        border-radius: 16px;
         box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
-    .full-col { grid-column: span 2; }
+    .form-grid { 
+        display: grid; 
+        grid-template-columns: repeat(3, 1fr); 
+        gap: 0.75rem; 
+        margin-top: 0.5rem; 
+    }
+    .full-col { grid-column: span 3; }
+    .span-2 { grid-column: span 2; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top: 0.5rem; }
+    .btn-save { padding: 10px 30px; }
+    .description-area { min-height: 46px; }
 
     @media (max-width: 900px) {
         .wide-layout { width: 95vw; }
@@ -183,7 +201,10 @@
     .option-all { color: var(--primary); font-weight: bold; }
     .btn-search { background: #3b5bdb; border: none; padding: 12px 40px; font-size: 1rem; height: 46px; min-width: 150px; }
     .btn-reset { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px 20px; font-size: 1rem; height: 46px; }
-    .table-card { padding: 0; overflow: hidden; }
+    .table-card { 
+        padding: 0; 
+        /* Removed overflow: hidden which was blocking the scrollbar of the container */
+    }
     .th-center { text-align: center; }
     .td-empty { text-align: center; padding: 4rem; color: var(--text-muted); }
     .icon-empty { font-size: 2rem; margin-bottom: 1rem; opacity: 0.5; }
@@ -194,6 +215,36 @@
     .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:1rem; }
     .btn-cancel { background:transparent; border:1px solid rgba(255,255,255,0.3); color:white; }
     .textarea-resizable { resize: vertical; min-height: 80px; }
+
+    /* --- SCROLLABLE TABLE --- */
+    .table-scroll-container {
+        max-height: 520px; /* Reduced further to ensure scrolling triggers */
+        overflow-y: auto;
+        overflow-x: hidden;
+        border-radius: 10px;
+        border: 1px solid var(--glass-border);
+        display: block;
+        position: relative;
+    }
+
+    /* Modern Webkit Scrollbar */
+    .table-scroll-container::-webkit-scrollbar { 
+        width: 10px; 
+        height: 10px;
+    }
+    .table-scroll-container::-webkit-scrollbar-track { 
+        background: rgba(15, 23, 42, 0.6); 
+        border-radius: 10px;
+    }
+    .table-scroll-container::-webkit-scrollbar-thumb { 
+        background: #3b5bdb;
+        background: linear-gradient(135deg, #5d6d7772 0%, #00d2ff 100%);
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .table-scroll-container::-webkit-scrollbar-thumb:hover { 
+        background: var(--primary);
+    }
 </style>
 
 <section>
@@ -206,7 +257,6 @@
             <div class="select-wrapper">
                 <label class="select-label">Search By (Key)</label>
                 <select id="searchKey" class="filter-input" title="Search Key">
-                    <option value="ALL" class="option-all">Show All Shipments</option>
                     <option value="Shipment_Number" selected>Shipment Number</option>
                     <option value="Device">Device Id</option>
                     <option value="Route_Details">Route</option>
@@ -232,7 +282,7 @@
     </div>
 
     <!-- BOTTOM SECTION: Data Table -->
-    <div class="glass-card wide-layout table-card">
+    <div class="glass-card wide-layout table-card table-scroll-container">
         <table class="data-table">
             <thead>
                 <tr>
@@ -272,9 +322,23 @@
                 <label class="select-label">Device ID</label>
                 <input id="edit_Device" name="Device" type="text" class="filter-input" required>
             </div>
-            <div class="select-wrapper full-col full-width">
+            <div class="select-wrapper span-2 full-width">
                 <label class="select-label">Route</label>
-                <input id="edit_Route_Details" name="Route_Details" type="text" class="filter-input" required>
+                <select id="edit_Route_Details" name="Route_Details" class="filter-input color-scheme-dark" required>
+                    <option value="" disabled>Select Global Route</option>
+                    <option>Newyork, USA → Chennai, India</option>
+                    <option>Chennai, India → Newyork, USA</option>
+                    <option>Chennai, India → London, UK</option>
+                    <option>Bengaluru, India → Newyork, USA</option>
+                    <option>London, UK → Chennai, India</option>
+                    <option>Newyork, USA → London, UK</option>
+                    <option>Bengaluru, India → London, UK</option>
+                    <option>Newyork, USA → Bengaluru, India</option>
+                    <option>Chennai, India → Bengaluru, India</option>
+                    <option>London, UK → Bengaluru, India</option>
+                    <option>Bengaluru, India → Chennai, India</option>
+                    <option>London, UK → Newyork, USA</option>
+                </select>
             </div>
             <div class="select-wrapper full-width">
                 <label class="select-label">Goods Type</label>
@@ -300,19 +364,19 @@
                 <label class="select-label">Batch ID</label>
                 <input id="edit_Batch_ID" name="Batch_ID" type="text" class="filter-input">
             </div>
-            <div class="select-wrapper full-col full-width">
+            <div class="select-wrapper span-2 full-width">
                 <label class="select-label">Shipment Description</label>
-                <textarea id="edit_Shipment_Description" name="Shipment_Description" class="filter-input textarea-resizable"></textarea>
+                <textarea id="edit_Shipment_Description" name="Shipment_Description" class="filter-input textarea-resizable description-area"></textarea>
             </div>
             
-            <div class="select-wrapper full-col full-width">
+            <div class="select-wrapper full-width">
                 <label class="select-label">Expected Delivery</label>
                 <input id="edit_Expected_Delivery_Date" name="Expected_Delivery_Date" type="datetime-local" class="filter-input input-dark" required>
             </div>
 
             <div class="full-col modal-actions">
                 <button type="button" class="btn btn-cancel" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="submit" class="btn btn-primary btn-save">Save Changes</button>
             </div>
         </form>
     </div>
@@ -339,23 +403,10 @@
             if(res.ok) {
                 allShipments = await res.json();
                 console.log("Shipments loaded:", allShipments.length);
-                performSearch(); // Explicitly trigger render so we guarantee actions render
+                renderTable(allShipments);
             }
         } catch(e) { console.error("Error loading shipments", e); }
     })();
-
-    // 2. Handle Dropdown
-    document.getElementById('searchKey').addEventListener('change', function() {
-        const valInput = document.getElementById('searchValue');
-        if (this.value === 'ALL') {
-            valInput.value = '';
-            valInput.disabled = true;
-            valInput.placeholder = 'Click Search to view all';
-        } else {
-            valInput.disabled = false;
-            valInput.placeholder = 'Enter value (e.g., SHP-1001)...';
-        }
-    });
 
     // 3. Button Listeners
     document.getElementById('btnSearch').addEventListener('click', performSearch);
@@ -366,7 +417,7 @@
         document.getElementById('searchValue').value = '';
         document.getElementById('searchValue').disabled = false;
         document.getElementById('searchKey').value = "Shipment_Number";
-        document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" style="text-align:center; padding:4rem; color:var(--text-muted);">Select options and click Search to view results.</td></tr>';
+        renderTable(allShipments);
     });
 
     // 4. Search Logic
@@ -374,12 +425,8 @@
         const key = document.getElementById('searchKey').value;
         const val = document.getElementById('searchValue').value.toLowerCase().trim();
 
-        if (key === 'ALL') {
-            renderTable(allShipments);
-            return;
-        }
-
         if(!val) {
+            renderTable(allShipments);
             return;
         }
 

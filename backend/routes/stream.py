@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Cookie
 from fastapi.responses import StreamingResponse
 from backend.auth.jwt_handler import decodeJWT
+from typing import Optional
 from aiokafka import AIOKafkaConsumer
 import asyncio
 import json
@@ -109,10 +110,22 @@ async def event_generator():
                 print(f"Error while stopping consumer: {cleanup_err}")
 
 @router.get("/events")
-async def message_stream(token: str = Query(None)):
+async def message_stream(
+    token: Optional[str] = Query(None), 
+    scm_token: Optional[str] = Cookie(None)
+):
     """Endpoint that frontend EventSource connects to."""
-    if not token or not decodeJWT(token):
+    # Prioritize cookie to keep logs clean
+    active_token = scm_token or token
+    
+    decoded = decodeJWT(active_token)
+    if not active_token or not decoded:
         raise HTTPException(status_code=403, detail="Unauthenticated Stream Request")
+    
+    from backend.config.database import user_collection
+    user = await user_collection.find_one({"email": decoded.get("email")})
+    if not user or not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin privileges required for stream access.")
         
     return StreamingResponse(
         event_generator(), 

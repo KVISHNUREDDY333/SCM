@@ -226,7 +226,18 @@
         // --- 2. Auth & Navigation Logic ---
         const apiPrefix = '/api/v1';
         function getToken() { return localStorage.getItem('scm_token'); }
-        function setToken(t) { t ? localStorage.setItem('scm_token', t) : localStorage.removeItem('scm_token'); updateUI(); }
+        function setToken(t, role) { 
+            if(t) {
+                localStorage.setItem('scm_token', t);
+                if(role) localStorage.setItem('user_role', role);
+                localStorage.setItem('scm_login_time', new Date().toLocaleString());
+                localStorage.removeItem('access_token'); 
+            } else {
+                localStorage.clear();
+                sessionStorage.clear();
+            }
+            updateUI(); 
+        }
         
         async function postJSON(url, data, auth=true) {
             const headers = {'Content-Type':'application/json'};
@@ -257,21 +268,45 @@
                     const res = await getJSON('/api/v1/me');
                     if(res.ok) {
                         const user = await res.json();
+                        
+                        // Update role and login time in storage if needed
+                        if(user.role) localStorage.setItem('user_role', user.role);
+                        if(user.last_login && !localStorage.getItem('scm_login_time')) {
+                             localStorage.setItem('scm_login_time', new Date(user.last_login).toLocaleString());
+                        }
+
                         let adminLink = '';
+                        let roleBadge = `<span style="font-size:0.7rem; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.1); color:var(--text-muted); margin-left:5px; border:1px solid var(--glass-border); text-transform:uppercase; font-weight:600;">${user.role || 'User'}</span>`;
+                        
                         if(user.is_admin) {
-                            adminLink = `<a href="/admin" class="nav-item" style="color:var(--accent); border:1px solid var(--accent);"><i class="fa-solid fa-shield-halved"></i> Admin Panel</a>`;
+                            adminLink = `
+                                <a href="/data-stream" class="nav-item"><i class="fa-solid fa-wifi"></i> Stream</a>
+                                <a href="/admin" class="nav-item" style="color:var(--accent); border:1px solid var(--accent);"><i class="fa-solid fa-shield-halved"></i> Admin Panel</a>
+                            `;
+                            roleBadge = `<span style="font-size:0.7rem; padding:2px 8px; border-radius:10px; background:rgba(248, 155, 41, 0.1); color:var(--accent); margin-left:5px; border:1px solid var(--accent); text-transform:uppercase; font-weight:600;">Admin</span>`;
                         }
 
                         nav.innerHTML = `
                             <a href="/dashboard" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
                             <a href="/create-shipment" class="nav-item"><i class="fa-solid fa-plus"></i> Create</a>
                             <a href="/my-shipments" class="nav-item"><i class="fa-solid fa-truck"></i> Shipments</a>
-                            <a href="/data-stream" class="nav-item"><i class="fa-solid fa-wifi"></i> Stream</a>
-                            <a href="/account" class="nav-item"><i class="fa-solid fa-user-astronaut"></i> Account</a>
+                            <a href="/account" class="nav-item"><i class="fa-solid fa-user-astronaut"></i> Account ${roleBadge}</a>
                             ${adminLink}
                             <button id="btn-logout" class="btn btn-ghost" style="margin-left:10px">Logout</button>
                         `;
-                        document.getElementById('btn-logout').addEventListener('click', () => { setToken(null); window.location.href='/'; });
+                        document.getElementById('btn-logout').addEventListener('click', async () => { 
+                            try {
+                                await fetch('/api/v1/logout', { 
+                                    method: 'POST', 
+                                    headers: { 'Authorization': 'Bearer ' + getToken() } 
+                                });
+                            } catch(e) { console.error("Logout notification failed", e); }
+                            document.cookie = "scm_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"; // Clear session cookie
+                            localStorage.clear();
+                            sessionStorage.clear();
+                            setToken(null); 
+                            window.location.href='/'; 
+                        });
                     }
                 } catch(e) { console.error("UI update failed", e); }
             } else {
@@ -305,7 +340,7 @@
         // Shared Broadcast Listener
         function initBroadcastListener() {
             if(!getToken()) return;
-            const source = new EventSource(`/api/v1/events?token=${getToken()}`);
+            const source = new EventSource('/api/v1/events', { withCredentials: true });
             source.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 if(data.type === 'broadcast') {

@@ -33,9 +33,18 @@ async def get_shipments(token: str = Depends(JWTBearer())):
     
     shipments = []
     
-    # 🔹 Logic FIX: Regular users ONLY see their own shipments. 
-    # Admins see everything.
-    query = {} if is_admin else {"created_by": email}
+    # Logic Update: Admins see everything. 
+    # Regular users see their own shipments AND shipments created by any admin.
+    if is_admin:
+        query = {}
+    else:
+        # Find all admin emails
+        admin_users_cursor = user_collection.find({"is_admin": True}, {"email": 1})
+        admin_emails = [u["email"] async for u in admin_users_cursor]
+        query = {"$or": [
+            {"created_by": email},
+            {"created_by": {"$in": admin_emails}}
+        ]}
     
     async for shipment in shipment_collection.find(query):
         shipment["_id"] = str(shipment["_id"])

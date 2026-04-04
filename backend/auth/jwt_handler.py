@@ -6,9 +6,8 @@ import os
 
 load_dotenv()
 
-import secrets
-# Use a dynamically generated secret key so that restarting the backend invalidates all existing sessions.
-JWT_SECRET = secrets.token_hex(32)
+# Persistent JWT Secret from .env or fallback
+JWT_SECRET = os.getenv("JWT_SECRET", "scm_xpert_lite_secure_permanent_session_secret_key_2026")
 JWT_ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
 def token_response(token: str):
