@@ -91,6 +91,7 @@
 
         /* --- GLASS CARDS --- */
         .container { max-width: 1600px; margin: 0 auto; padding: 2rem; flex: 1; width: 100%; }
+        @media (max-width: 768px) { .container { padding: 1rem; } }
         
         .glass-card {
             background: var(--glass);
@@ -156,9 +157,9 @@
         .global-modal-card {
             background: #0f172a;
             border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 20px;
-            width: 450px;
-            padding: 2.5rem;
+            width: 90%;
+            max-width: 450px;
+            padding: 2.5rem 1.5rem;
             text-align: center;
             box-shadow: 0 25px 50px rgba(0,0,0,0.6);
             transform: scale(0.9);
@@ -218,11 +219,54 @@
         .bell-dot { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 10px #ef4444; display: none; }
         .empty-notif { text-align: center; color: var(--text-muted); padding: 3rem 1rem; font-style: italic; font-size: 0.9rem; }
 
-        /* Responsive */
-        @media(max-width: 768px) {
-            .navbar { flex-direction: column; gap: 1rem; }
-            .nav-links { flex-wrap: wrap; justify-content: center; }
-            .glass-card { padding: 1.5rem; }
+        /* --- GLOBAL RESPONSIVE REFINEMENTS --- */
+        @media (max-width: 1024px) {
+            .container { padding: 1.5rem; }
+            .dashboard-title { font-size: 2.2rem; }
+        }
+
+        @media (max-width: 768px) {
+            :root { --nav-height: 70px; }
+            .navbar { padding: 0.75rem 1.5rem; justify-content: space-between; position: relative; }
+            
+            /* Burger Toggle */
+            .nav-burger { display: flex !important; flex-direction: column; gap: 5px; cursor: pointer; z-index: 1001; }
+            .nav-burger span { width: 25px; height: 3px; background: white; border-radius: 5px; transition: 0.3s; transform-origin: left; }
+            .nav-burger.active span:nth-child(1) { transform: rotate(45deg); }
+            .nav-burger.active span:nth-child(2) { opacity: 0; }
+            .nav-burger.active span:nth-child(3) { transform: rotate(-45deg); }
+
+            /* Mobile Menu Overlay */
+            .nav-links {
+                position: fixed; top: 0; right: -100%; width: 280px; height: 100vh;
+                background: rgba(15, 23, 42, 0.98); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+                flex-direction: column; padding: 100px 2rem 2rem; gap: 1.5rem;
+                transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: -10px 0 30px rgba(0,0,0,0.5); border-left: 1px solid var(--glass-border);
+                z-index: 1000; justify-content: flex-start; align-items: flex-start;
+            }
+            .nav-links.active { right: 0; }
+            .nav-links a { font-size: 1.1rem; width: 100%; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+            
+            .glass-card { padding: 1.25rem; border-radius: 12px; }
+            .footer { padding: 2rem 1rem; }
+            .footer-grid { grid-template-columns: 1fr; gap: 2rem; text-align: center; }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-title { font-size: 1.8rem; }
+            .btn { padding: 10px 20px; font-size: 0.9rem; }
+            .navbar-logo { font-size: 1.2rem; }
+        }
+
+        /* --- MICROTANSITIONS --- */
+        .page-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- BURGER OVERRIDES --- */
+        .nav-burger { display: none; } /* Default hidden on desktop */
+        @media (max-width: 768px) {
+            .nav-burger { display: flex !important; }
         }
     </style>
 </head>
@@ -262,6 +306,14 @@
 
     <header class="navbar">
         <a href="/" class="brand"><i class="fa-solid fa-boxes-stacked"></i> SCMXpertLite</a>
+        
+        <!-- BURGER TOGGLE FOR MOBILE -->
+        <div class="nav-burger" id="mobile-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
         <nav class="nav-links" id="nav-menu"></nav>
     </header>
 
@@ -276,6 +328,39 @@
     <!-- Scripts -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
+        // --- 0. RESPONSIVE MOBILE MENU ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const burger = document.getElementById('mobile-toggle');
+            const menu = document.getElementById('nav-menu');
+            
+            if(burger && menu) {
+                burger.onclick = (e) => {
+                    e.stopPropagation();
+                    burger.classList.toggle('active');
+                    menu.classList.toggle('active');
+                    document.body.style.overflow = menu.classList.contains('active') ? 'hidden' : 'initial';
+                };
+
+                // Close menu when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (menu.classList.contains('active') && !menu.contains(e.target) && e.target !== burger) {
+                        burger.classList.remove('active');
+                        menu.classList.remove('active');
+                        document.body.style.overflow = 'initial';
+                    }
+                });
+
+                // Use delegation for dynamic links
+                menu.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'A' || e.target.closest('a')) {
+                        burger.classList.remove('active');
+                        menu.classList.remove('active');
+                        document.body.style.overflow = 'initial';
+                    }
+                });
+            }
+        });
+
         // --- 1. Background Animation (The "Live Image" feel) ---
         const canvas = document.getElementById('canvas-bg');
         const ctx = canvas.getContext('2d');
@@ -384,8 +469,16 @@
                         if(user.is_admin) {
                             adminLink = `
                                 <a href="/data-stream" class="nav-item"><i class="fa-solid fa-wifi"></i> Stream</a>
-                                <a href="/admin" class="nav-item" style="color:var(--accent); border:1px solid var(--accent);"><i class="fa-solid fa-shield-halved"></i> Admin Panel</a>
+                                <a href="/admin" class="nav-item admin-nav-btn"><i class="fa-solid fa-shield-halved"></i> Admin Panel</a>
                             `;
+                            // Add admin specific class for styling
+                            const style = document.createElement('style');
+                            style.textContent = `
+                                .admin-nav-btn { color:var(--accent) !important; border:1px solid var(--accent) !important; }
+                                .admin-nav-btn:hover { background: rgba(248, 155, 41, 0.1) !important; }
+                                @media (max-width: 768px) { .admin-nav-btn { border: none !important; color: white !important; } }
+                            `;
+                            document.head.appendChild(style);
                             roleBadge = `<span style="font-size:0.7rem; padding:2px 8px; border-radius:10px; background:rgba(248, 155, 41, 0.1); color:var(--accent); margin-left:5px; border:1px solid var(--accent); text-transform:uppercase; font-weight:600;">Admin</span>`;
                         }
 
@@ -403,8 +496,11 @@
                             <a href="/my-shipments" class="nav-item"><i class="fa-solid fa-truck"></i> Shipments</a>
                             ${adminLink}
                             <a href="/account" class="nav-item"><i class="fa-solid fa-user-astronaut"></i> Account ${roleBadge}</a>
-                            <button id="btn-logout" class="btn btn-ghost" style="margin-left:10px">Logout</button>
+                            <button id="btn-logout" class="btn btn-ghost logout-btn">Logout</button>
                         `;
+                        const logoutBtnStyle = document.createElement('style');
+                        logoutBtnStyle.textContent = `@media (max-width: 768px) { .logout-btn { margin: 10px 0 0 0 !important; width: 100%; border: 1px solid var(--glass-border) !important; } }`;
+                        document.head.appendChild(logoutBtnStyle);
                         
                         // Check for new broadcasts silently
                         loadBroadcasts();

@@ -3,27 +3,104 @@
 {% block title %}Profile - SCMXpertLite{% endblock %}
 
 {% block content %}
-<section style="display: flex; justify-content: center; align-items: center; min-height: 70vh;">
-    <div class="glass-card" style="width: 100%; max-width: 500px; text-align: center; position: relative; overflow: hidden;">
-        <!-- Decorative Glow -->
-        <div style="position: absolute; top: -50px; left: 50%; transform: translateX(-50%); width: 150px; height: 150px; background: var(--primary); border-radius: 50%; opacity: 0.1; filter: blur(40px);"></div>
+<style>
+    .profile-section {
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        min-height: 70vh;
+    }
+    .profile-card {
+        width: 100%; 
+        max-width: 500px; 
+        text-align: center; 
+        position: relative; 
+        overflow: hidden;
+    }
+    .profile-glow {
+        position: absolute; 
+        top: -50px; 
+        left: 50%; 
+        transform: translateX(-50%); 
+        width: 150px; 
+        height: 150px; 
+        background: var(--primary); 
+        border-radius: 50%; 
+        opacity: 0.1; 
+        filter: blur(40px);
+    }
+    .avatar-wrapper {
+        margin-bottom: 1.5rem; 
+        position: relative;
+    }
+    .avatar-icon {
+        font-size: 5rem; 
+        color: var(--text-main); 
+        background: rgba(255,255,255,0.05); 
+        padding: 30px; 
+        border-radius: 50%; 
+        border: 2px solid var(--primary);
+    }
+    .profile-label {
+        margin-bottom: 0.5rem; 
+        font-size: 1.2rem; 
+        color: var(--text-muted); 
+        text-transform: uppercase; 
+        letter-spacing: 2px;
+    }
+    .profile-details {
+        margin-bottom: 2rem;
+    }
+    .login-stats-divider {
+        margin-bottom: 2rem; 
+        border-top: 1px solid var(--glass-border); 
+        padding-top: 1.5rem; 
+        display: flex; 
+        justify-content: center;
+    }
+    .login-pill {
+        background: rgba(0, 255, 136, 0.05); 
+        padding: 15px 30px; 
+        border-radius: 12px; 
+        border: 1px solid rgba(0, 255, 136, 0.1); 
+        min-width: 220px;
+    }
+    .pill-title {
+        font-size: 0.75rem; 
+        color: var(--text-muted); 
+        text-transform: uppercase; 
+        letter-spacing: 1px; 
+        margin-bottom: 5px;
+    }
+    .pill-value {
+        font-size: 1rem; 
+        color: #00ff88; 
+        font-weight: 600; 
+        font-family: 'Courier New', monospace;
+    }
+</style>
 
-        <div style="margin-bottom: 1.5rem; position: relative;">
-            <i class="fa-solid fa-user-astronaut" style="font-size: 5rem; color: var(--text-main); background: rgba(255,255,255,0.05); padding: 30px; border-radius: 50%; border: 2px solid var(--primary);"></i>
+<section class="page-fade-in profile-section">
+    <div class="glass-card profile-card">
+        <!-- Decorative Glow -->
+        <div class="profile-glow"></div>
+
+        <div class="avatar-wrapper">
+            <i class="fa-solid fa-user-astronaut avatar-icon"></i>
         </div>
         
-        <h2 style="margin-bottom: 0.5rem; font-size: 1.2rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">My Profile</h2>
+        <h2 class="profile-label">My Profile</h2>
         
         <!-- Profile Details -->
-        <div id="profile" style="margin-bottom: 2rem;">Loading details...</div>
+        <div id="profile" class="profile-details">Loading details...</div>
 
         <!-- Timestamp Section -->
-        <div style="margin-bottom: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem; display: flex; justify-content: center;">
-            <div style="background: rgba(0, 255, 136, 0.05); padding: 15px 30px; border-radius: 12px; border: 1px solid rgba(0, 255, 136, 0.1); min-width: 220px;">
-                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">
+        <div class="login-stats-divider">
+            <div class="login-pill">
+                <div class="pill-title">
                     <i class="fa-solid fa-signal"></i> Active Session Started
                 </div>
-                <div id="loginTime" style="font-size: 1rem; color: #00ff88; font-weight: 600; font-family: 'Courier New', monospace;">
+                <div id="loginTime" class="pill-value">
                     --
                 </div>
             </div>

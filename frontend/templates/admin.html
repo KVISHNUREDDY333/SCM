@@ -189,10 +189,17 @@
         grid-template-columns: 1fr;
         gap: 3rem;
     }
-    @media (max-width: 1000px) { 
+    .admin-grid { display: grid; grid-template-columns: 1fr 3fr; gap: 1.5rem; }
+    
+    @media (max-width: 1200px) {
         .admin-grid { grid-template-columns: 1fr; }
-        .admin-top-flex { flex-direction: column; align-items: stretch; gap: 1rem; }
-        .header-controls { justify-content: space-between; flex-wrap: wrap; }
+    }
+
+    @media (max-width: 600px) {
+        .admin-top-flex { flex-direction: column; align-items: stretch; gap: 1.5rem; }
+        .header-controls { flex-direction: column; width: 100%; }
+        .tab-btn { padding: 0.75rem 1rem; font-size: 0.85rem; }
+        .glass-card { padding: 1.25rem !important; }
     }
     
     /* --- PROFESSIONAL ENHANCEMENTS --- */
@@ -458,7 +465,7 @@
 
 </style>
 
-<div class="admin-container">
+<div class="admin-container page-fade-in">
     <div class="admin-top-flex">
         <div class="panel-header admin-header">
             <h1><i class="fa-solid fa-screwdriver-wrench"></i> System Command Center</h1>

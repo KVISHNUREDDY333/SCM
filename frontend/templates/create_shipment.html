@@ -14,7 +14,19 @@
         flex-direction: column;
     }
     section { flex: 1; display: flex; flex-direction: column; }
+    /* Layout: 2 Columns (Form Left, Summary Right) */
     .layout-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: stretch; flex: 1; min-height: 70vh; }
+    
+    @media (max-width: 1024px) {
+        .layout-grid { grid-template-columns: 1fr; }
+        .summary-card { order: -1; } /* On smaller screens, summary or core actions first */
+    }
+
+    @media (max-width: 600px) {
+        .form-grid { grid-template-columns: 1fr; }
+        .glass-card { padding: 1.5rem !important; }
+        .page-title { font-size: 1.8rem; }
+    }
     .glass-card { padding: 2rem !important; display: flex; flex-direction: column; }
     .form-group { margin-bottom: 1.2rem !important; }
     .form-input { padding: 12px !important; font-size: 0.95rem !important; }
@@ -37,7 +49,7 @@
     .btn-clear { background: #ff4757; color: white; justify-content: center; width: 100%; border: none; padding: 1rem; font-size: 1.1rem; }
     .msg-box { text-align: center; margin-top: 1rem; min-height: 1.2rem; font-size: 1rem; }
 </style>
-<section>
+<section class="page-fade-in">
     <!-- Layout: 2 Columns (Form Left, Summary Right) -->
     <div class="layout-grid">
         
