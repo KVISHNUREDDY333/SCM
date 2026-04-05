@@ -90,6 +90,26 @@ def send_otp_email(recipient_email: str, otp: str) -> None:
         print(f" Fallback OTP for {recipient_email}: {otp}")
         print("=" * 40 + "\n")
 
+# ---------- CONCURRENT SESSION MANAGEMENT ----------
+async def manage_user_sessions(user_id: str, email: str, access_token: str):
+    """
+    Enforces a strict limit of 5 concurrent active sessions per user account.
+    If the threshold is exceeded, the oldest session is automatically purged (FIFO).
+    """
+    sessions = await session_collection.find({"user_id": user_id}).sort("created_at", 1).to_list(None)
+    
+    if len(sessions) >= 5:
+        # Evict oldest session to maintain the 5-login cap
+        await session_collection.delete_one({"_id": sessions[0]["_id"]})
+
+    # Record the new session registry
+    await session_collection.insert_one({
+        "access_token": access_token,
+        "email": email,
+        "user_id": user_id,
+        "created_at": datetime.now()
+    })
+
 
 # --- 1. SIGNUP ROUTE ---
 @router.post("/signup")
@@ -116,13 +136,8 @@ async def create_user(request: Request, response: Response, users: UserSchema = 
     new_user = await user_collection.insert_one(user_dict)
     resp = signJWT(str(new_user.inserted_id), users.email)
     
-    # Register Session
-    await session_collection.insert_one({
-        "access_token": resp["access_token"],
-        "email": users.email,
-        "user_id": str(new_user.inserted_id),
-        "created_at": datetime.now()
-    })
+    # Register and Manage Concurrent Sessions (Limit: 5)
+    await manage_user_sessions(str(new_user.inserted_id), users.email, resp["access_token"])
     
     # Set Cookie for SSE
     response.set_cookie(key="scm_token", value=resp["access_token"], httponly=True, samesite="lax")
@@ -158,13 +173,8 @@ async def login(
         
         resp = signJWT(str(user["_id"]), user["email"])
         
-        # Register Session
-        await session_collection.insert_one({
-            "access_token": resp["access_token"],
-            "email": user["email"],
-            "user_id": str(user["_id"]),
-            "created_at": datetime.now()
-        })
+        # Register and Manage Concurrent Sessions (Limit: 5)
+        await manage_user_sessions(str(user["_id"]), user["email"], resp["access_token"])
         
         # Set Cookie for SSE
         response.set_cookie(key="scm_token", value=resp["access_token"], httponly=True, samesite="lax")
@@ -219,13 +229,8 @@ async def google_login(request: Request, response: Response, payload: GoogleAuth
 
     resp = signJWT(user_id, email)
     
-    # Register Session
-    await session_collection.insert_one({
-        "access_token": resp["access_token"],
-        "email": email,
-        "user_id": user_id,
-        "created_at": datetime.now()
-    })
+    # Register and Manage Concurrent Sessions (Limit: 5)
+    await manage_user_sessions(user_id, email, resp["access_token"])
     
     # Set Cookie for SSE
     response.set_cookie(key="scm_token", value=resp["access_token"], httponly=True, samesite="lax")
