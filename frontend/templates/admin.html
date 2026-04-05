@@ -1226,37 +1226,54 @@
         if(raw.Expected_Delivery_Date) raw.Expected_Delivery_Date = new Date(raw.Expected_Delivery_Date).toISOString();
         const num = raw.Shipment_Number;
 
+        // --- ADMINISTRATIVE NOTIFICATION PROMPT ---
+        // Before final submission, ask the admin if they want to dispatch a notification to the user.
+        confirmGlobalModal(
+            'Dispatch User Notification?', 
+            `You are about to save changes to shipment ${num}. Would you like to automatically notify the shipment creator (${allShipments.find(s => s.Shipment_Number === num)?.created_by}) about these modifications?`, 
+            async () => {
+                // Admin chose: YES, NOTIFY USER
+                raw.Notify_User = true;
+                await submitShipmentUpdate(num, raw);
+            },
+            async () => {
+                // Admin chose: NO, JUST SAVE
+                raw.Notify_User = false;
+                await submitShipmentUpdate(num, raw);
+            },
+            'YES, NOTIFY',
+            'SURE, JUST SAVE'
+        );
+    };
+
+    async function submitShipmentUpdate(num, payload) {
         const res = await fetch(`/api/v1/shipments/${num}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
-            body: JSON.stringify(raw)
+            body: JSON.stringify(payload)
         });
 
         if(res.ok) {
-            addLog(`Shipment ${num} successfully modified via Master Override.`);
+            addLog(`Shipment ${num} successfully modified via Master Override (Notification: ${payload.Notify_User ? 'Sent' : 'Skipped'}).`);
             closeShipmentModal();
 
             // ── INSTANT OPTIMISTIC UPDATE ──────────────────────────────────
-            // Patch the in-memory array immediately so every table & metric
-            // reflects the new status without waiting for a network round-trip.
             const idx = allShipments.findIndex(s => s.Shipment_Number === num);
             if(idx !== -1) {
-                allShipments[idx] = { ...allShipments[idx], ...raw };
+                allShipments[idx] = { ...allShipments[idx], ...payload };
             }
-            // Immediately re-render tables and status boxes from updated cache
             renderGlobalTable(allShipments);
             updateStatusMetrics(allShipments);
 
             // ── BACKGROUND SERVER SYNC ─────────────────────────────────────
-            // Confirm saved state from DB to stay in perfect server parity
             await loadGlobalShipments();
             await loadStats();
 
-            showGlobalModal('Master Override Success', `All tables & metrics updated for ${num}`, 'success');
+            showGlobalModal('Override Success', `All tables & metrics updated for ${num}`, 'success');
         } else {
             showGlobalModal('Override Failed', "Critical error during registry modification.", 'error');
         }
-    };
+    }
 
     // Actions
     async function deleteUser(id, email) {

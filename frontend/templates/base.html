@@ -527,18 +527,23 @@
         }
 
         let gModalConfirmCallback = null;
-        function confirmGlobalModal(title, message, onConfirm) {
+        function confirmGlobalModal(title, message, onConfirm, onCancel = null, confirmText = 'CONFIRM', cancelText = 'CANCEL') {
             showGlobalModal(title, message, 'info');
             const cancelBtn = document.getElementById('gmodal-cancel-btn');
             const closeBtn = document.getElementById('gmodal-close-btn');
             
             cancelBtn.style.display = 'block';
-            closeBtn.textContent = 'CONFIRM';
+            cancelBtn.textContent = cancelText;
+            closeBtn.textContent = confirmText;
             closeBtn.style.background = '#ef4444'; // Red for confirm
             
             gModalConfirmCallback = onConfirm;
             closeBtn.onclick = () => {
                 if(gModalConfirmCallback) gModalConfirmCallback();
+                closeGlobalModal();
+            };
+            cancelBtn.onclick = () => {
+                if(onCancel) onCancel();
                 closeGlobalModal();
             };
         }

@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Body, Depends, HTTPException
 from typing import List
+from datetime import datetime
 from backend.models.shipment import ShipmentSchema
-from backend.config.database import shipment_collection, user_collection
+from backend.config.database import shipment_collection, user_collection, direct_messages_collection
 from backend.middleware.security import JWTBearer
 from backend.auth.jwt_handler import decodeJWT
 
@@ -111,5 +112,25 @@ async def update_shipment(shipment_number: str, shipment: ShipmentSchema = Body(
         {"Shipment_Number": shipment_number},
         {"$set": update_data}
     )
+
+    # --- AUTOMATED NOTIFICATION LOGIC ---
+    # Trigger a personal notification to the shipment creator if explicitly requested by an administrator.
+    if is_admin and update_data.get("Notify_User"):
+        creator_email = existing_shipment.get("created_by")
+        if creator_email:
+            # Construct a professional administrative override alert
+            system_notification = {
+                "recipient_email": creator_email,
+                "sender_email": "system@scmxpert.com",
+                "title": f"⚠️ Admin Override: Shipment {shipment_number}",
+                "message": (
+                    f"Operational update detected. An administrator ({email}) has modified "
+                    f"the parameters of shipment {shipment_number}. Please review the updated "
+                    f"manifest and status in your control panel."
+                ),
+                "timestamp": datetime.now().isoformat(),
+                "is_read": False
+            }
+            await direct_messages_collection.insert_one(system_notification)
 
     return {"message": "Shipment updated successfully"}
