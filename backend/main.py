@@ -35,6 +35,17 @@ async def maintenance_check(request: Request, call_next):
 
     config = await settings_collection.find_one({"key": "maintenance_config"})
     if config and config.get("value", {}).get("is_active"):
+        # Check if user is an admin to allow bypass
+        token = request.cookies.get("scm_token")
+        if token:
+            from backend.auth.jwt_handler import decodeJWT
+            from backend.config.database import user_collection
+            decoded = decodeJWT(token)
+            if decoded:
+                user = await user_collection.find_one({"email": decoded.get("email")})
+                if user and user.get("is_admin"):
+                    return await call_next(request)
+        
         return RedirectResponse(url="/maintenance")
         
     return await call_next(request)
@@ -88,58 +99,90 @@ async def serve_index(request: Request):
         "RECAPTCHA_SITE_KEY": RECAPTCHA_SITE_KEY
     })
 
+async def get_page_context(request: Request):
+    """Helper to get common template context (Auth, Admin status, etc)"""
+    context = {
+        "request": request,
+        "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID,
+        "RECAPTCHA_SITE_KEY": RECAPTCHA_SITE_KEY,
+        "is_authenticated": False,
+        "is_admin": False,
+        "user": None
+    }
+    
+    token = request.cookies.get("scm_token")
+    if token:
+        from backend.auth.jwt_handler import decodeJWT
+        from backend.config.database import user_collection
+        decoded = decodeJWT(token)
+        if decoded:
+            user = await user_collection.find_one({"email": decoded.get("email")})
+            if user:
+                context["is_authenticated"] = True
+                context["is_admin"] = user.get("is_admin", False)
+                context["user"] = user
+    return context
+
+@app.get("/")
+async def serve_index(request: Request):
+    context = await get_page_context(request)
+    if context["is_authenticated"]:
+        return RedirectResponse(url="/dashboard")
+    return templates.TemplateResponse(request=request, name="login.html", context=context)
+
 @app.get("/signup")
 async def serve_signup(request: Request):
-    return templates.TemplateResponse(request=request, name="login.html", context={
-        "request": request, 
-        "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID,
-        "RECAPTCHA_SITE_KEY": RECAPTCHA_SITE_KEY
-    })
+    context = await get_page_context(request)
+    if context["is_authenticated"]:
+        return RedirectResponse(url="/dashboard")
+    return templates.TemplateResponse(request=request, name="login.html", context=context)
 
 @app.get("/dashboard")
 async def serve_dashboard(request: Request):
-    return templates.TemplateResponse(request=request, name="dashboard.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
+    context = await get_page_context(request)
+    if not context["is_authenticated"]:
+        return RedirectResponse(url="/")
+    return templates.TemplateResponse(request=request, name="dashboard.html", context=context)
 
 @app.get("/create-shipment")
 async def serve_create_shipment(request: Request):
-    return templates.TemplateResponse(request=request, name="create_shipment.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
+    context = await get_page_context(request)
+    if not context["is_authenticated"]:
+        return RedirectResponse(url="/")
+    return templates.TemplateResponse(request=request, name="create_shipment.html", context=context)
 
 @app.get("/my-shipments")
 async def serve_my_shipments(request: Request):
-    return templates.TemplateResponse(request=request, name="my_shipments.html", context={
-        "request": request, 
-        "GOOGLE_CLIENT_ID": os.getenv("GOOGLE_CLIENT_ID", "")
-    })
+    context = await get_page_context(request)
+    if not context["is_authenticated"]:
+        return RedirectResponse(url="/")
+    return templates.TemplateResponse(request=request, name="my_shipments.html", context=context)
 
 @app.get("/data-stream")
 async def serve_data_stream(request: Request):
-    token = request.cookies.get("scm_token")
-    if not token:
-        return RedirectResponse("/")
-    
-    from backend.auth.jwt_handler import decodeJWT
-    decoded = decodeJWT(token)
-    if not decoded:
-        return RedirectResponse("/")
-        
-    from backend.config.database import user_collection
-    user = await user_collection.find_one({"email": decoded.get("email")})
-    if not user or not user.get("is_admin"):
-        return RedirectResponse("/dashboard")
-        
-    return templates.TemplateResponse(request=request, name="data_stream.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
+    context = await get_page_context(request)
+    if not context["is_authenticated"] or not context["is_admin"]:
+        return RedirectResponse(url="/dashboard")
+    return templates.TemplateResponse(request=request, name="data_stream.html", context=context)
 
 @app.get("/account")
 async def serve_account(request: Request):
-    return templates.TemplateResponse(request=request, name="account.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
+    context = await get_page_context(request)
+    if not context["is_authenticated"]:
+        return RedirectResponse(url="/")
+    return templates.TemplateResponse(request=request, name="account.html", context=context)
 
 @app.get("/admin")
 async def serve_admin(request: Request):
-    return templates.TemplateResponse(request=request, name="admin.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
+    context = await get_page_context(request)
+    if not context["is_authenticated"] or not context["is_admin"]:
+        return RedirectResponse(url="/dashboard")
+    return templates.TemplateResponse(request=request, name="admin.html", context=context)
 
 @app.get("/forgot-password")
 async def serve_forgot_password(request: Request):
-    return templates.TemplateResponse(request=request, name="forgot_password.html", context={"request": request, "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID})
+    context = await get_page_context(request)
+    return templates.TemplateResponse(request=request, name="forgot_password.html", context=context)
 
 @app.get("/maintenance")
 async def serve_maintenance(request: Request):
@@ -147,9 +190,6 @@ async def serve_maintenance(request: Request):
 
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc):
-    return templates.TemplateResponse(request=request, name="error.html", context={
-        "request": request, 
-        "error_code": "404", 
-        "error_message": "Page Not Found",
-        "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID
-    })
+    context = await get_page_context(request)
+    context.update({"error_code": "404", "error_message": "Page Not Found"})
+    return templates.TemplateResponse(request=request, name="error.html", context=context)

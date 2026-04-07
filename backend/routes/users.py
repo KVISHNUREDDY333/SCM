@@ -16,7 +16,7 @@ from backend.models.user import (
     VerifyOTPSchema,
     ResetPasswordSchema
 )
-from backend.config.database import user_collection, otp_collection, session_collection
+from backend.config.database import user_collection, otp_collection, session_collection, settings_collection
 from backend.auth.jwt_handler import signJWT, decodeJWT
 from backend.middleware.security import JWTBearer
 from backend.config.limiter import limiter

@@ -364,6 +364,40 @@
         body.hide-toggle #theme-toggle {
             display: none !important;
         }
+
+        /* ROLE-BASED BADGES & BUTTONS */
+        .admin-nav-btn { 
+            color: var(--accent) !important; 
+            border: 1px solid var(--accent) !important; 
+        }
+        .admin-nav-btn:hover { 
+            background: rgba(248, 155, 41, 0.1) !important; 
+        }
+        
+        .role-badge {
+            font-size: 0.7rem; 
+            padding: 2px 8px; 
+            border-radius: 10px; 
+            margin-left: 5px; 
+            text-transform: uppercase; 
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-admin {
+            background: rgba(248, 155, 41, 0.1); 
+            color: var(--accent); 
+            border: 1px solid var(--accent);
+        }
+        .badge-user {
+            background: rgba(255, 255, 255, 0.1); 
+            color: var(--text-muted); 
+            border: 1px solid var(--glass-border);
+        }
+
+        @media (max-width: 768px) {
+            .admin-nav-btn { border: none !important; color: white !important; }
+            .logout-btn { margin: 10px 0 0 0 !important; width: 100%; border: 1px solid var(--glass-border) !important; }
+        }
     </style>
 </head>
 <body>
@@ -401,7 +435,7 @@
     </div>
 
     <header class="navbar">
-        <a href="/" class="brand"><i class="fa-solid fa-boxes-stacked"></i> SCMXpertLite</a>
+        <div class="brand"><i class="fa-solid fa-boxes-stacked"></i> SCMXpertLite</div>
         
         <div class="header-actions">
             <!-- BURGER TOGGLE FOR MOBILE -->
@@ -412,7 +446,46 @@
             </div>
         </div>
 
-        <nav class="nav-links" id="nav-menu"></nav>
+        <nav class="nav-links" id="nav-menu">
+            {% if is_authenticated %}
+                <!-- SERVER-SIDE RENDERED NAVBAR (No Flicker) -->
+                <button class="bell-btn" id="bell-btn" onclick="toggleNotifDrawer()" title="View System Notifications">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="bell-dot" id="bell-dot"></span>
+                </button>
+                <a href="/dashboard" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                <a href="/create-shipment" class="nav-item"><i class="fa-solid fa-plus"></i> Create</a>
+                <a href="/my-shipments" class="nav-item"><i class="fa-solid fa-truck"></i> Shipments</a>
+                {% if is_admin %}
+                    <a href="/data-stream" class="nav-item"><i class="fa-solid fa-wifi"></i> Stream</a>
+                    <a href="/admin" class="nav-item admin-nav-btn"><i class="fa-solid fa-shield-halved"></i> Admin Panel</a>
+                {% endif %}
+                <a href="/account" class="nav-item">
+                    <i class="fa-solid fa-user-astronaut"></i> Account 
+                    {% if is_admin %}
+                        <span class="role-badge badge-admin">Admin</span>
+                    {% else %}
+                        <span class="role-badge badge-user">{{ user.role or 'User' }}</span>
+                    {% endif %}
+                </a>
+                <button id="btn-logout" class="btn btn-ghost logout-btn" onclick="handleLogout()">Logout</button>
+                <script>
+                    async function handleLogout() {
+                        try {
+                            const token = localStorage.getItem('scm_token');
+                            await fetch('/api/v1/logout', { 
+                                method: 'POST', 
+                                headers: { 'Authorization': 'Bearer ' + token } 
+                            });
+                        } catch(e) { console.error("Logout notification failed", e); }
+                        document.cookie = "scm_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                        localStorage.clear();
+                        sessionStorage.clear();
+                        window.location.href='/'; 
+                    }
+                </script>
+            {% endif %}
+        </nav>
     </header>
 
     <main class="container">
@@ -568,70 +641,44 @@
                     if(res.ok) {
                         const user = await res.json();
                         
-                        // Update role and login time in storage if needed
+                        // Sync storage
                         if(user.role) localStorage.setItem('user_role', user.role);
                         if(user.last_login && !localStorage.getItem('scm_login_time')) {
                              localStorage.setItem('scm_login_time', new Date(user.last_login).toLocaleString());
                         }
 
-                        let adminLink = '';
-                        let roleBadge = `<span style="font-size:0.7rem; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.1); color:var(--text-muted); margin-left:5px; border:1px solid var(--glass-border); text-transform:uppercase; font-weight:600;">${user.role || 'User'}</span>`;
-                        
-                        if(user.is_admin) {
-                            adminLink = `
+                        // If navbar is somehow empty (fallback), render it
+                        if(nav && nav.innerHTML.trim() === "") {
+                             // This handles cases where server didn't render it (e.g. static error page)
+                             let adminLink = user.is_admin ? `
                                 <a href="/data-stream" class="nav-item"><i class="fa-solid fa-wifi"></i> Stream</a>
                                 <a href="/admin" class="nav-item admin-nav-btn"><i class="fa-solid fa-shield-halved"></i> Admin Panel</a>
-                            `;
-                            // Add admin specific class for styling
-                            const style = document.createElement('style');
-                            style.textContent = `
-                                .admin-nav-btn { color:var(--accent) !important; border:1px solid var(--accent) !important; }
-                                .admin-nav-btn:hover { background: rgba(248, 155, 41, 0.1) !important; }
-                                @media (max-width: 768px) { .admin-nav-btn { border: none !important; color: white !important; } }
-                            `;
-                            document.head.appendChild(style);
-                            roleBadge = `<span style="font-size:0.7rem; padding:2px 8px; border-radius:10px; background:rgba(248, 155, 41, 0.1); color:var(--accent); margin-left:5px; border:1px solid var(--accent); text-transform:uppercase; font-weight:600;">Admin</span>`;
+                             ` : '';
+                             
+                             let roleBadge = user.is_admin ? 
+                                `<span class="role-badge badge-admin">Admin</span>` :
+                                `<span class="role-badge badge-user">${user.role || 'User'}</span>`;
+
+                             nav.innerHTML = `
+                                <button class="bell-btn" id="bell-btn" onclick="toggleNotifDrawer()">
+                                    <i class="fa-solid fa-bell"></i>
+                                    <span class="bell-dot" id="bell-dot"></span>
+                                </button>
+                                <a href="/dashboard" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                                <a href="/create-shipment" class="nav-item"><i class="fa-solid fa-plus"></i> Create</a>
+                                <a href="/my-shipments" class="nav-item"><i class="fa-solid fa-truck"></i> Shipments</a>
+                                ${adminLink}
+                                <a href="/account" class="nav-item"><i class="fa-solid fa-user-astronaut"></i> Account ${roleBadge}</a>
+                                <button id="btn-logout" class="btn btn-ghost logout-btn" onclick="handleLogout()">Logout</button>
+                             `;
                         }
-
-                        const bellHtml = `
-                            <button class="bell-btn" id="bell-btn" onclick="toggleNotifDrawer()" title="View System Notifications">
-                                <i class="fa-solid fa-bell"></i>
-                                <span class="bell-dot" id="bell-dot"></span>
-                            </button>
-                        `;
-
-                        nav.innerHTML = `
-                            ${bellHtml}
-                            <a href="/dashboard" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
-                            <a href="/create-shipment" class="nav-item"><i class="fa-solid fa-plus"></i> Create</a>
-                            <a href="/my-shipments" class="nav-item"><i class="fa-solid fa-truck"></i> Shipments</a>
-                            ${adminLink}
-                            <a href="/account" class="nav-item"><i class="fa-solid fa-user-astronaut"></i> Account ${roleBadge}</a>
-                            <button id="btn-logout" class="btn btn-ghost logout-btn">Logout</button>
-                        `;
-                        const logoutBtnStyle = document.createElement('style');
-                        logoutBtnStyle.textContent = `@media (max-width: 768px) { .logout-btn { margin: 10px 0 0 0 !important; width: 100%; border: 1px solid var(--glass-border) !important; } }`;
-                        document.head.appendChild(logoutBtnStyle);
                         
-                        // Check for new broadcasts silently
+                        // Check for broadcasts
                         loadBroadcasts();
-                        document.getElementById('btn-logout').addEventListener('click', async () => { 
-                            try {
-                                await fetch('/api/v1/logout', { 
-                                    method: 'POST', 
-                                    headers: { 'Authorization': 'Bearer ' + getToken() } 
-                                });
-                            } catch(e) { console.error("Logout notification failed", e); }
-                            document.cookie = "scm_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"; // Clear session cookie
-                            localStorage.clear();
-                            sessionStorage.clear();
-                            setToken(null); 
-                            window.location.href='/'; 
-                        });
                     }
                 } catch(e) { console.error("UI update failed", e); }
             } else {
-                nav.innerHTML = '';
+                if(nav) nav.innerHTML = '';
             }
         }
         document.addEventListener('DOMContentLoaded', updateUI);

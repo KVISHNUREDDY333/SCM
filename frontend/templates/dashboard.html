@@ -145,14 +145,18 @@
     .temp-normal { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
 </style>
 
-<section class="page-fade-in">
+<section class="page-fade-in {% if is_admin %}admin-context{% endif %}">
     <div class="dashboard-header">
-        <h1 class="dashboard-title" id="dashTitle">Dashboard</h1>
-        <p class="dashboard-subtitle" id="dashSubtitle">Overview of supply chain operations</p>
+        <h1 class="dashboard-title" id="dashTitle">
+            {% if is_admin %}Global Logistics Overview{% else %}Dashboard{% endif %}
+        </h1>
+        <p class="dashboard-subtitle" id="dashSubtitle">
+            {% if is_admin %}Administrative control tower and global registry{% else %}Overview of supply chain operations{% endif %}
+        </p>
     </div>
 
     <!-- QUICK STATS ROW -->
-    <div class="dashboard-stats">
+    <div class="dashboard-stats" {% if is_admin %}style="display: none !important;"{% endif %}>
         <div class="glass-card stat-card stat-total">
             <div class="stat-icon-wrap">
                 <i class="fa-solid fa-boxes-stacked"></i>
@@ -219,7 +223,7 @@
                 <a href="/my-shipments" class="btn btn-ghost op-btn-full">
                     <i class="fa-solid fa-list-ul"></i> View Inventory
                 </a>
-                <a id="streamNavBtn" href="/data-stream" class="btn btn-ghost op-btn-full admin-btn-hidden">
+                <a id="streamNavBtn" href="/data-stream" class="btn btn-ghost op-btn-full {% if not is_admin %}admin-btn-hidden{% endif %}">
                     <i class="fa-solid fa-tower-broadcast"></i> Stream Data
                 </a>
             </div>
@@ -228,7 +232,9 @@
         <!-- RIGHT PANEL: Recent Shipments -->
         <div class="glass-card shipments-card">
             <div class="shipments-header">
-                <h3 class="section-title" id="shipmentsSecTitle"><i class="fa-solid fa-clock-rotate-left"></i> Recent Shipments</h3>
+                <h3 class="section-title" id="shipmentsSecTitle">
+                    {% if is_admin %}<i class="fa-solid fa-globe"></i> Global Registry{% else %}<i class="fa-solid fa-clock-rotate-left"></i> Recent Shipments{% endif %}
+                </h3>
                 <a href="/my-shipments" class="view-all-link">View All <i class="fa-solid fa-arrow-right"></i></a>
             </div>
 
@@ -241,7 +247,7 @@
     </div>
 
     <!-- ADMIN EXCLUSIVE: Device Comparison Visualization -->
-    <div id="adminVizSection" class="admin-viz-section page-fade-in">
+    <div id="adminVizSection" class="admin-viz-section page-fade-in" {% if is_admin %}style="display: block;"{% endif %}>
         <div class="glass-card admin-viz-card">
             <div class="viz-header">
                 <div class="viz-title">
