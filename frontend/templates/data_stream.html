@@ -9,24 +9,20 @@
         max-width: 95% !important;
     }
     /* --- BREAKOUT STYLE --- */
-    .wide-layout {
-        width: 100%;
-    }
-
-    /* Stream Containers */
+    .wide-layout { width: 100%; }
     .stream-container-card { height: 85vh; display: flex; flex-direction: column; overflow: hidden; padding: 0; }
-    .stream-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); }
+    .stream-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-deep); }
     .stream-header-left { display: flex; align-items: center; gap: 10px; }
     .stream-icon { color: var(--primary); font-size: 1.2rem; }
-    .stream-title { font-size: 1.2rem; margin: 0; }
+    .stream-title { font-size: 1.2rem; margin: 0; color: var(--text-main); font-weight: 700; }
     .stream-header-right { display: flex; align-items: center; gap: 15px; }
 
     /* Search Section */
-    .search-section { padding: 1.5rem; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.15); }
+    .search-section { padding: 1.5rem; border-bottom: 1px solid var(--glass-border); background: var(--input-bg); }
     .search-wrapper { display: flex; justify-content: center; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap; }
     .search-col-1 { flex: 0 1 250px; }
     .search-col-2 { flex: 0 1 300px; }
-    .search-label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; }
+    .search-label { display: block; font-size: 0.85rem; color: var(--text-main); font-weight: 600; margin-bottom: 6px; }
     .search-btn-group { display: flex; gap: 10px; }
 
     /* Table Section */
@@ -34,11 +30,11 @@
     .table-container::-webkit-scrollbar { width: 6px; }
     .table-container::-webkit-scrollbar-track { background: transparent; }
     .table-container::-webkit-scrollbar-thumb { background-color: rgba(0, 210, 255, 0.3); border-radius: 4px; }
-    .stream-table { width: 100%; border-collapse: collapse; font-family: 'Courier New', monospace; }
-    .stream-thead { background: rgba(23, 30, 48, 0.95); position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--glass-border); }
-    .stream-th { padding: 1rem; text-align: left; color: var(--text-muted); font-size: 0.85rem; }
-    .stream-th-center { padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
-    .stream-th-right { padding: 1rem; text-align: right; color: var(--text-muted); font-size: 0.85rem; }
+    .stream-table { width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; }
+    .stream-thead { background: linear-gradient(180deg, var(--secondary), var(--primary)); position: sticky; top: 0; z-index: 10; border-bottom: 1px solid rgba(0,0,0,0.1); }
+    .stream-th { padding: 1rem; text-align: left; color: white; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; }
+    .stream-th-center { padding: 1rem; text-align: center; color: white; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; }
+    .stream-th-right { padding: 1rem; text-align: right; color: white; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; }
     .stream-empty-td { padding: 4rem; text-align: center; color: var(--text-muted); }
 
     /* Status Badge Styling */
@@ -48,8 +44,8 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
         font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;
     }
-    .status-badge.active { border-color: #00ff88; background: rgba(0, 255, 136, 0.1); color: #00ff88; }
-    .status-badge.paused { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.1); color: #ff6b6b; }
+    .status-badge.active { border-color: #059669; background: rgba(16, 185, 129, 0.1); color: #059669; }
+    .status-badge.paused { border-color: #d97706; background: rgba(245, 158, 11, 0.1); color: #d97706; }
 
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: currentColor; box-shadow: 0 0 8px currentColor; }
 
@@ -65,22 +61,22 @@
 
     /* Battery Badge */
     .battery-pill { padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: bold; }
-    .bat-high { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
-    .bat-med { background: rgba(255, 200, 0, 0.2); color: #ffc800; }
-    .bat-low { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
+    .bat-high { background: rgba(16, 185, 129, 0.15); color: #059669; }
+    .bat-med { background: rgba(245, 158, 11, 0.15); color: #d97706; }
+    .bat-low { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
 
     /* Search Inputs Styling */
     .search-control {
-        background: rgba(0,0,0,0.3);
+        background: var(--bg-deep);
         border: 1px solid var(--glass-border);
-        color: white;
+        color: var(--text-main);
         padding: 10px 15px;
         border-radius: 8px;
         width: 100%;
         outline: none;
         font-family: 'Outfit', sans-serif;
     }
-    .search-control:focus { border-color: var(--primary); }
+    .search-control:focus { border-color: var(--primary); background: var(--input-bg); }
     .search-btn {
         background: linear-gradient(135deg, var(--secondary), var(--primary));
         color: white; border: none; padding: 10px 25px; border-radius: 25px;
@@ -248,10 +244,10 @@
         }
 
         tr.innerHTML = `
-            <td style="padding: 1rem; font-weight: 700; color: white;">${d.Shipment_Number || '—'}</td>
-            <td style="padding: 1rem; color: #d1d5db;">${d.Device || '—'}</td>
-            <td style="padding: 1rem; color: white;"><i class="fa-solid fa-temperature-half" style="color:var(--text-muted)"></i> &nbsp;${d.Temperature || '—'}</td>
-            <td style="padding: 1rem; color: white;"><i class="fa-solid fa-location-dot" style="color:var(--text-muted)"></i> &nbsp;${d.Location || '—'}</td>
+            <td style="padding: 1rem; font-weight: 700; color: var(--text-main);">${d.Shipment_Number || '—'}</td>
+            <td style="padding: 1rem; color: var(--text-muted);">${d.Device || '—'}</td>
+            <td style="padding: 1rem; color: var(--text-main);"><i class="fa-solid fa-temperature-half" style="color:var(--primary)"></i> &nbsp;${d.Temperature || '—'}</td>
+            <td style="padding: 1rem; color: var(--text-main);"><i class="fa-solid fa-location-dot" style="color:var(--primary)"></i> &nbsp;${d.Location || '—'}</td>
             <td style="padding: 1rem; text-align: center;">
                 <span class="battery-pill ${getBatteryClass(d.Battery)}">${d.Battery || '0%'}</span>
             </td>

@@ -4,6 +4,8 @@ import datetime
 import uuid
 
 class UserUpdateSchema(BaseModel):
+    first_name: Optional[str] = Field(None, min_length=2)
+    last_name: Optional[str] = Field(None, min_length=2)
     username: Optional[str] = Field(None, min_length=3)
     is_admin: Optional[bool] = None
     role: Optional[str] = None

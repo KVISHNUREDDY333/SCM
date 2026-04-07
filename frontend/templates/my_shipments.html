@@ -21,20 +21,31 @@
         background-position: center;
         border: 1px solid var(--glass-border);
         border-radius: var(--card-radius);
-        padding: 1.25rem 2rem; /* Reduced padding as requested */
+        padding: 1.25rem 2rem;
         text-align: center;
-        margin-bottom: 0.75rem; /* Moved table some up */
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        margin-bottom: 0.75rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
+
+    :root[data-theme='light'] .filter-card {
+        background: linear-gradient(rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.9)),
+                    url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop');
+        border-color: var(--primary);
     }
 
     .filter-label {
-        font-size: 1.3rem; /* Reduced label size for cleaner look */
+        font-size: 1.3rem;
         font-weight: 700;
         margin-bottom: 1.25rem;
-        color: white;
+        color: var(--text-main);
         text-transform: uppercase;
         letter-spacing: 2px;
-        text-shadow: 0 2px 10px rgba(0,210,255,0.4);
+    }
+    
+    :root[data-theme='dark'] .filter-label { 
+        color: white; 
+        text-shadow: 0 2px 10px rgba(59, 130, 246, 0.2);
     }
 
     /* Controls Container */
@@ -47,36 +58,41 @@
     }
 
     .select-wrapper { text-align: left; width: 300px; }
-    .select-label { display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+    .select-label { display: block; font-size: 0.9rem; color: var(--text-main); font-weight: 600; margin-bottom: 0.5rem; }
     
     /* Input & Select Styles */
     .filter-input {
-        background: rgba(0, 0, 0, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        -webkit-backdrop-filter: blur(5px);
-        backdrop-filter: blur(5px);
-        width: 100%;
+        background: var(--input-bg);
+        border: 1px solid var(--glass-border);
+        transition: all 0.3s ease;
         padding: 12px 16px;
         border-radius: 8px;
-        color: white;
-        font-size: 1rem;
-        transition: all 0.3s ease;
+        color: var(--text-main);
+        font-size: 0.95rem;
+        width: 100%;
+        outline: none;
+    }
+    select.filter-input {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1rem;
+        cursor: pointer;
+    }
+    :root[data-theme='dark'] select.filter-input {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     }
     .filter-input:focus { 
         border-color: var(--primary); 
-        background: rgba(0, 0, 0, 0.8); 
-        outline: none; 
-        box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
+        background: var(--glass);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
     }
     
-    /* Placeholder color */
-    ::placeholder { color: rgba(255, 255, 255, 0.4); }
-
-    .filter-input:disabled {
-        background: rgba(255, 255, 255, 0.1);
-        color: rgba(255, 255, 255, 0.3);
+    .filter-input:disabled, .input-readonly {
+        background: var(--bg-deep);
+        opacity: 0.8;
         cursor: not-allowed;
-        border-color: transparent;
     }
 
     /* Table Styles */
@@ -88,7 +104,7 @@
     }
 
     .data-table thead th {
-        background: linear-gradient(180deg, #3b5bdb 0%, #2b45b5 100%); /* Subtle premium gradient */
+        background: linear-gradient(180deg, var(--secondary), var(--primary)); 
         color: white;
         padding: 1.2rem;
         text-align: left;
@@ -99,7 +115,7 @@
         position: sticky;
         top: 0;
         z-index: 10;
-        border-bottom: 2px solid rgba(0,0,0,0.2);
+        border-bottom: 2px solid rgba(0,0,0,0.1);
         box-shadow: inset 0 -1px 0 rgba(255,255,255,0.1);
     }
 
@@ -109,22 +125,22 @@
     .data-table thead th:last-child { border-top-right-radius: 10px; }
 
     .data-table tbody tr {
-        background: rgba(255, 255, 255, 0.02);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        background: transparent;
+        border-bottom: 1px solid var(--glass-border);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     /* Alternate row background */
     .data-table tbody tr:nth-child(even) {
-        background: rgba(255, 255, 255, 0.04);
+        background: var(--input-bg);
     }
 
     .data-table tbody tr:hover { 
-        background: rgba(59, 91, 219, 0.12); /* Subtle blue glow on hover */
+        background: var(--glass);
         transform: scale(1.002);
         box-shadow: inset 4px 0 0 var(--primary);
     }
-    .data-table td { padding: 1.1rem 1.2rem; color: #cbd5e1; vertical-align: middle; }
+    .data-table td { padding: 1.1rem 1.2rem; color: var(--text-main); vertical-align: middle; border-bottom: 1px solid var(--glass-border); }
     .td-center { text-align: center; }
 
     /* --- ACTION BUTTONS --- */
@@ -200,27 +216,94 @@
         display: none; justify-content: center; align-items: center; z-index: 2000;
     }
     .modal-content {
-        background: #0f172a;
-        border: 1px solid rgba(255,255,255,0.1);
+        background: var(--modal-bg);
+        border: 1px solid var(--glass-border);
         width: 1100px; 
         max-width: 95%; 
+        height: auto;
         max-height: 98vh; 
         overflow-y: hidden; 
-        padding: 1.5rem; 
+        padding: 2rem; 
         border-radius: 16px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+        display: flex;
+        flex-direction: column;
+        position: relative;
     }
     .form-grid { 
         display: grid; 
         grid-template-columns: repeat(3, 1fr); 
-        gap: 0.75rem; 
-        margin-top: 0.5rem; 
+        gap: 1rem; 
+        margin-top: 1rem; 
     }
-    .full-col { grid-column: span 3; }
+    .full-col, .span-3 { grid-column: span 3; }
     .span-2 { grid-column: span 2; }
-    .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top: 0.5rem; }
-    .btn-save { padding: 10px 30px; }
-    .description-area { min-height: 46px; }
+    .form-group { margin-bottom: 0.1rem; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:16px; margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 2rem; flex-shrink: 0; }
+    .btn { 
+        padding: 10px 24px; 
+        border-radius: 10px; 
+        font-weight: 700; 
+        font-size: 0.9rem; 
+        cursor: pointer; 
+        transition: all 0.3s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-cancel { 
+        background: var(--input-bg); 
+        color: var(--text-main); 
+        border: 2px solid var(--primary); 
+        min-width: 150px;
+    }
+    .btn-cancel:hover { background: var(--primary); color: white; }
+    
+    .btn-primary { 
+        background: var(--primary); 
+        color: white; 
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.25);
+        min-width: 180px;
+    }
+    .btn-primary:hover { 
+        transform: translateY(-2px); 
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        filter: brightness(1.1);
+    }
+    :root[data-theme='dark'] .btn-cancel {
+        background: rgba(255,255,255,0.05);
+        color: #94a3b8;
+        border-color: rgba(255,255,255,0.1);
+    }
+    :root[data-theme='dark'] .btn-cancel:hover { background: rgba(255,255,255,0.1); color: white; }
+
+    .status-locked { color: var(--primary) !important; font-weight: 700; }
+    .description-area { min-height: 80px !important; }
+    
+    .modal-title { 
+        color: var(--primary); 
+        font-weight: 800; 
+        margin-bottom: 1rem; 
+        font-size: 1.5rem;
+    }
+    
+    /* Force high-contrast text in inputs */
+    .filter-input, select.filter-input, .filter-input::placeholder {
+        color: var(--text-main) !important;
+        opacity: 1 !important;
+    }
+    
+    /* Ensure select options are visible */
+    select.filter-input option {
+        background: white;
+        color: #1e293b;
+    }
+    :root[data-theme='dark'] select.filter-input option {
+        background: #0f172a;
+        color: white;
+    }
 
     @media (max-width: 900px) {
         .wide-layout { width: 95vw; }
@@ -232,21 +315,20 @@
 
     /* --- NEW UTILITY CLASSES --- */
     .option-all { color: var(--primary); font-weight: bold; }
-    .btn-search { background: #3b5bdb; border: none; padding: 12px 40px; font-size: 1rem; height: 46px; min-width: 150px; }
-    .btn-reset { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px 20px; font-size: 1rem; height: 46px; }
+    .btn-search { background: var(--primary); border: none; padding: 12px 40px; font-size: 1rem; height: 46px; min-width: 150px; color: white; border-radius: 30px; font-weight: 700; transition: 0.3s; cursor: pointer; }
+    .btn-search:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
+    .btn-reset { background: var(--input-bg); border: 1px solid var(--glass-border); color: var(--text-muted); padding: 12px 20px; font-size: 1rem; height: 46px; border-radius: 30px; transition: 0.3s; cursor: pointer; }
+    .btn-reset:hover { background: var(--glass-border); color: var(--text-main); }
     .table-card { 
         padding: 0; 
-        /* Removed overflow: hidden which was blocking the scrollbar of the container */
     }
     .th-center { text-align: center; }
     .td-empty { text-align: center; padding: 4rem; color: var(--text-muted); }
     .icon-empty { font-size: 2rem; margin-bottom: 1rem; opacity: 0.5; }
-    .modal-title { color:white; margin-bottom:1rem; }
+    .modal-title-alt { color:white; margin-bottom:1rem; }
     .full-width { width: 100%; }
     .input-readonly { cursor: not-allowed; opacity: 0.6; }
     .input-dark { color-scheme:dark; }
-    .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:1rem; }
-    .btn-cancel { background:transparent; border:1px solid rgba(255,255,255,0.3); color:white; }
     .textarea-resizable { resize: vertical; min-height: 80px; }
     
     .status-locked { color: var(--primary) !important; font-weight: 700 !important; cursor: not-allowed; opacity: 0.8; }
@@ -343,80 +425,95 @@
 
 </section>
 
-<!-- EDIT MODAL (Hidden by default) -->
 <div id="editModal" class="modal-overlay">
     <div class="modal-content">
-        <h2 class="modal-title">Edit Shipment</h2>
+        <h2 class="modal-title">Edit Shipment Profile</h2>
         <form id="editForm" class="form-grid">
-            <div class="select-wrapper full-width">
+            <div class="form-group">
                 <label class="select-label">Shipment Number</label>
                 <input id="edit_Shipment_Number" name="Shipment_Number" type="text" class="filter-input input-readonly" readonly>
             </div>
-            <div class="select-wrapper full-width">
+            <div class="form-group">
                 <label class="select-label">Device ID</label>
-                <input id="edit_Device" name="Device" type="text" class="filter-input" required>
-            </div>
-            <div class="select-wrapper full-width">
-                <label class="select-label">Current Status (Managed by Admin)</label>
-                <input id="edit_Status" type="text" class="filter-input input-readonly status-locked" readonly>
-            </div>
-            <div class="select-wrapper span-2 full-width">
-                <label class="select-label">Route</label>
-                <select id="edit_Route_Details" name="Route_Details" class="filter-input color-scheme-dark" required>
-                    <option value="" disabled>Select Global Route</option>
-                    <option>Newyork, USA → Chennai, India</option>
-                    <option>Chennai, India → Newyork, USA</option>
-                    <option>Chennai, India → London, UK</option>
-                    <option>Bengaluru, India → Newyork, USA</option>
-                    <option>London, UK → Chennai, India</option>
-                    <option>Newyork, USA → London, UK</option>
-                    <option>Bengaluru, India → London, UK</option>
-                    <option>Newyork, USA → Bengaluru, India</option>
-                    <option>Chennai, India → Bengaluru, India</option>
-                    <option>London, UK → Bengaluru, India</option>
-                    <option>Bengaluru, India → Chennai, India</option>
-                    <option>London, UK → Newyork, USA</option>
+                <select id="edit_Device" name="Device" class="filter-input" required>
+                    <option value="IOT-1150">IOT-1150</option>
+                    <option value="IOT-1151">IOT-1151</option>
+                    <option value="IOT-1152">IOT-1152</option>
+                    <option value="IOT-1153">IOT-1153</option>
+                    <option value="IOT-1154">IOT-1154</option>
+                    <option value="IOT-1155">IOT-1155</option>
+                    <option value="IOT-1156">IOT-1156</option>
+                    <option value="IOT-1157">IOT-1157</option>
+                    <option value="IOT-1158">IOT-1158</option>
                 </select>
             </div>
-            <div class="select-wrapper full-width">
+            <div class="form-group">
+                <label class="select-label">Current Status</label>
+                <select id="edit_Status" name="Status" class="filter-input">
+                    <option value="In Transit">In Transit</option>
+                    <option value="Delayed">Delayed</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="select-label">Origin Hub</label>
+                <select id="edit_Origin" class="filter-input" required>
+                    <option value="" disabled selected>Select Origin</option>
+                    <option>Newyork, USA</option>
+                    <option>Chennai, India</option>
+                    <option>London, UK</option>
+                    <option>Bengaluru, India</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="select-label">Destination Hub</label>
+                <select id="edit_Destination" class="filter-input" required>
+                    <option value="" disabled selected>Select Destination</option>
+                    <option>Newyork, USA</option>
+                    <option>Chennai, India</option>
+                    <option>London, UK</option>
+                    <option>Bengaluru, India</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label class="select-label">Goods Type</label>
                 <input id="edit_Goods_Type" name="Goods_Type" type="text" class="filter-input" required>
             </div>
-            <div class="select-wrapper full-width">
+            <div class="form-group">
                 <label class="select-label">PO Number</label>
                 <input id="edit_Po_Number" name="Po_Number" type="text" class="filter-input" required>
             </div>
-            <div class="select-wrapper full-width">
+            <div class="form-group">
                 <label class="select-label">NDC Number</label>
                 <input id="edit_NDC_Number" name="NDC_Number" type="text" class="filter-input" required>
             </div>
-            <div class="select-wrapper full-width">
+            <div class="form-group">
                 <label class="select-label">Serial Number</label>
                 <input id="edit_Serial_Number_of_Goods" name="Serial_Number_of_Goods" type="text" class="filter-input" required>
             </div>
-            <div class="select-wrapper full-width">
+            <div class="form-group">
                 <label class="select-label">Container Number</label>
                 <input id="edit_Container_number" name="Container_number" type="text" class="filter-input" required>
             </div>
-            <div class="select-wrapper full-width">
+            <div class="form-group">
                 <label class="select-label">Batch ID</label>
                 <input id="edit_Batch_ID" name="Batch_ID" type="text" class="filter-input">
             </div>
-            <div class="select-wrapper span-2 full-width">
+            <div class="form-group span-3">
                 <label class="select-label">Shipment Description</label>
-                <textarea id="edit_Shipment_Description" name="Shipment_Description" class="filter-input textarea-resizable description-area"></textarea>
+                <textarea id="edit_Shipment_Description" name="Shipment_Description" class="filter-input description-area"></textarea>
             </div>
             
-            <div class="select-wrapper full-width">
+            <div class="form-group">
                 <label class="select-label">Expected Delivery</label>
-                <input id="edit_Expected_Delivery_Date" name="Expected_Delivery_Date" type="datetime-local" class="filter-input input-dark" required>
-            </div>
-
-            <div class="full-col modal-actions">
-                <button type="button" class="btn btn-cancel" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary btn-save">Save Changes</button>
+                <input id="edit_Expected_Delivery_Date" name="Expected_Delivery_Date" type="datetime-local" class="filter-input" required>
             </div>
         </form>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+            <button type="submit" form="editForm" class="btn btn-primary">Save Changes</button>
+        </div>
     </div>
 </div>
 
@@ -501,20 +598,21 @@
             
             // Determine Badge Class
             let badgeClass = 'badge-transit';
-            const status = s.Status || 'In Transit';
-            if(status === 'Delayed') badgeClass = 'badge-delayed';
-            if(status === 'Delivered') badgeClass = 'badge-delivered';
-            if(status === 'Cancelled') badgeClass = 'badge-cancelled';
+            const status = s.Shipment_Status || s.Status || 'In Transit';
+            const statusLower = status.toLowerCase();
+            if(statusLower.includes('delay')) badgeClass = 'badge-delayed';
+            if(statusLower.includes('deliver')) badgeClass = 'badge-delivered';
+            if(statusLower.includes('cancel')) badgeClass = 'badge-cancelled';
 
             tr.innerHTML = `
-                <td style="color:var(--primary); font-weight:bold; text-shadow: 0 0 10px rgba(0,210,255,0.2);">${s.Shipment_Number}</td>
-                <td style="color:white; font-weight:bold;">${s.Device}</td>
-                <td class="td-center"><span style="background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 6px; font-size:0.85rem; border: 1px solid rgba(255,255,255,0.1);">${battery}%</span></td>
-                <td class="td-center" style="font-weight:600; color:#e2e8f0;">${temp} °C</td>
-                <td style="font-size:0.9rem; opacity:0.9;">${displayRoute}</td>
+                <td style="color:var(--primary); font-weight:bold;">${s.Shipment_Number}</td>
+                <td style="color:var(--text-main); font-weight:bold;">${s.Device}</td>
+                <td class="td-center"><span style="background: var(--input-bg); padding: 4px 10px; border-radius: 6px; font-size:0.85rem; border: 1px solid var(--glass-border); color: var(--text-main);">${battery}%</span></td>
+                <td class="td-center" style="font-weight:600; color:var(--text-main);">${temp} °C</td>
+                <td style="font-size:0.9rem; color: var(--text-main);">${displayRoute}</td>
                 <td class="td-center"><span class="badge-status ${badgeClass}">${status}</span></td>
-                <td style="color: #69db7c; font-weight:600;">${deliveryDate}</td>
-                <td style="font-size:0.85rem; opacity:0.7;">${time}</td>
+                <td style="color: #10b981; font-weight:600;">${deliveryDate}</td>
+                <td style="font-size:0.85rem; color: var(--text-muted);">${time}</td>
                 <td class="td-center">
                     <div class="action-container">
                         <!-- EDIT BUTTON -->
@@ -565,7 +663,13 @@
         // Fill form
         document.getElementById('edit_Shipment_Number').value = shipment.Shipment_Number;
         document.getElementById('edit_Device').value = shipment.Device;
-        document.getElementById('edit_Route_Details').value = shipment.Route_Details;
+        
+        // Split and populate hubs
+        if(shipment.Route_Details && shipment.Route_Details.includes(' → ')) {
+            const parts = shipment.Route_Details.split(' → ');
+            document.getElementById('edit_Origin').value = parts[0];
+            document.getElementById('edit_Destination').value = parts[1];
+        }
         
         // Fill hidden fields to preserve data structure on save
         document.getElementById('edit_Goods_Type').value = shipment.Goods_Type || "N/A";
@@ -597,6 +701,11 @@
         const raw = Object.fromEntries(new FormData(e.target).entries());
         if(raw.Expected_Delivery_Date) raw.Expected_Delivery_Date = new Date(raw.Expected_Delivery_Date).toISOString();
 
+        // Finalize Route Architecture
+        const origin = document.getElementById('edit_Origin').value;
+        const dest = document.getElementById('edit_Destination').value;
+        raw.Route_Details = `${origin} → ${dest}`;
+
         const shipmentNum = document.getElementById('edit_Shipment_Number').value;
 
         try {
@@ -607,16 +716,22 @@
             });
 
             if(res.ok) {
-                showGlobalModal('Update Complete', 'Shipment updated successfully', 'success');
+                showGlobalModal('Registry Updated', 'Operational parameters have been successfully synchronized.', 'success');
                 closeModal();
-                // Reload data silently and refresh table
+                // Refresh data silently
                 const refresh = await getJSON('/api/v1/shipments');
-                allShipments = await refresh.json();
-                performSearch();
+                if(refresh.ok) {
+                    allShipments = await refresh.json();
+                    performSearch();
+                }
             } else {
-                showGlobalModal('Update Failed', 'Shipment override failed.', 'error');
+                const err = await res.json();
+                showGlobalModal('Update Failed', err.detail || 'Shipment override rejected by server.', 'error');
             }
-        } catch(err) { console.error(err); showGlobalModal('System Error', 'Server or network error.', 'error'); }
+        } catch(err) { 
+            console.error(err); 
+            showGlobalModal('System Connection Error', 'Failed to communicate with master relay.', 'error'); 
+        }
     });
 
     // Close modal on outside click

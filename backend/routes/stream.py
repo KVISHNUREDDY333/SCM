@@ -56,10 +56,25 @@ async def event_generator():
                     "Shipment_Number": data.get("Shipment_Number", "Unknown"),
                     "Device": data.get("Device", "Unknown"),
                     "Temperature": data.get("Temperature", 0.0),
-                    "Location": data.get("Route_Details", "Unknown"),  # Map Route_Details to Location for frontend
+                    "Location": data.get("Route_Details", "Unknown"), 
+                    "Route_Details": data.get("Route_Details", "Unknown"),  
                     "Battery": data.get("Battery", "0%"),
-                    "timestamp": data.get("timestamp", datetime.datetime.now().timestamp())
+                    "Status": data.get("Status", "In Transit"),
+                    "timestamp": data.get("timestamp", datetime.datetime.now().timestamp()),
+                    "is_kafka": True,
+                    "created_by": "KAFKA_SYSTEM"
                 }
+
+                # PERSIST TO DATABASE (UPSERT + ARCHIVE)
+                from backend.config.database import shipment_collection, device_stream_collection
+                await shipment_collection.update_one(
+                    {"Shipment_Number": formatted_data["Shipment_Number"]},
+                    {"$set": formatted_data},
+                    upsert=True
+                )
+                # Archive in device_stream for history tracking
+                await device_stream_collection.insert_one(formatted_data.copy())
+
                 yield f"data: {json.dumps(formatted_data)}\n\n"
                 
                 # Check for active broadcasts (non-blocking)
@@ -84,10 +99,24 @@ async def event_generator():
                     "Shipment_Number": f"SHP-{random.randint(1000, 9999)}",
                     "Device": f"IOT-{random.randint(1150, 1158)}",
                     "Temperature": round(random.uniform(10, 40.0), 1),
-                    "Location": f"{routefrom} ➝ {routeto}",  # Use Route_Details format
-                    "Battery": f"{random.randint(20, 100)}%",  # Convert to percentage for frontend
-                    "timestamp": datetime.datetime.now().timestamp()
+                    "Location": f"{routefrom} ➝ {routeto}",
+                    "Route_Details": f"{routefrom} ➝ {routeto}",  
+                    "Battery": f"{random.randint(20, 100)}%",  
+                    "Status": "In Transit",
+                    "timestamp": datetime.datetime.now().timestamp(),
+                    "is_kafka": True,
+                    "created_by": "KAFKA_SYSTEM"
                 }
+
+                # PERSIST TO DATABASE (UPSERT + ARCHIVE)
+                from backend.config.database import shipment_collection, device_stream_collection
+                await shipment_collection.update_one(
+                    {"Shipment_Number": mock_data["Shipment_Number"]},
+                    {"$set": mock_data},
+                    upsert=True
+                )
+                # Archive in device_stream for history tracking
+                await device_stream_collection.insert_one(mock_data.copy())
                 
                 yield f"data: {json.dumps(mock_data)}\n\n"
 

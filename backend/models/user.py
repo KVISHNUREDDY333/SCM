@@ -2,7 +2,9 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 import re
 class UserSchema(BaseModel):
-    username: str = Field(..., min_length=3)
+    first_name: str = Field(..., min_length=2)
+    last_name: str = Field(..., min_length=2)
+    username: Optional[str] = Field(None, min_length=3)
     email: EmailStr = Field(...)
     # This definition allows any string as long as it is 3+ chars
     password: str = Field(..., min_length=3) 
@@ -10,6 +12,8 @@ class UserSchema(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
+                "first_name": "SCM",
+                "last_name": "Admin",
                 "username": "scm_admin", 
                 "email": "admin@scm.com",
                 "password": "strongpassword"

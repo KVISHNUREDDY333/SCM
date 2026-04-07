@@ -8,7 +8,6 @@
         display: grid;
         grid-template-columns: 380px 1fr; /* Left Fixed, Right Flexible */
         gap: 1.5rem;
-        align-items: start;
     }
 
     /* Stack on smaller screens */
@@ -24,14 +23,33 @@
     .dashboard-subtitle { color: var(--text-muted); }
 
     /* Left Panel Styles */
-    .op-center-card { display: flex; flex-direction: column; gap: 1.5rem; height: 100%; }
+    .op-center-card { display: flex; flex-direction: column; gap: 1.5rem; height: auto; }
     .op-center-title { color: var(--primary); font-size: 1.3rem; }
     .op-center-desc { color: var(--text-muted); font-size: 0.9rem; margin-top: -10px; }
-    .op-actions-container { display: grid; gap: 4rem; margin-top: auto; }
+    .op-actions-container { display: grid; gap: 1rem; margin-top: 1.5rem; }
     .op-btn-full { justify-content: center; width: 100%; padding: 1rem; }
+    .viz-accent-icon { color: var(--primary); }
+    .viz-sub-text { font-size: 0.8rem; color: var(--text-muted); }
+    .viz-status-center { text-align: center; padding: 3rem; opacity: 0.5; }
+
+    .viz-chart-container { padding: 1.5rem; background: rgba(0,0,0,0.1); border-radius: 12px; border: 1px solid var(--glass-border); min-height: 320px; }
+
+    /* Refresh Button Styling */
+    .viz-refresh-btn { 
+        background: transparent; border: none; color: var(--text-muted); 
+        cursor: pointer; padding: 5px; font-size: 0.9rem; transition: 0.3s; 
+        margin-left: 10px; opacity: 0.7;
+    }
+    .viz-refresh-btn:hover { color: var(--primary); opacity: 1; transform: scale(1.1); }
+    
+    @keyframes spinRefresh {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .spin-active { animation: spinRefresh 0.8s linear; }
 
     /* Right Panel Styles */
-    .shipments-card { min-height: 500px; }
+    .shipments-card { height: 100%; }
     .shipments-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .section-title { font-size: 1.3rem; }
     .view-all-link { color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
@@ -39,7 +57,7 @@
         display: flex; 
         flex-direction: column; 
         gap: 0.8rem; 
-        max-height: 420px;
+        max-height: 250px;
         overflow-y: auto;
         padding-right: 8px;
     }
@@ -60,13 +78,126 @@
     }
     
     .loader-container { text-align: center; padding: 4rem; color: var(--text-muted); }
+    .admin-btn-hidden { display: none !important; }
+
+    /* --- DASHBOARD STATISTICS --- */
+    .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        border-radius: 16px;
+        transition: transform 0.3s;
+    }
+    .stat-card:hover { transform: translateY(-3px); }
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    .stat-info h4 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px; }
+    .stat-info .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-main); }
+
+    /* Stat Variants */
+    .stat-total { border-left: 4px solid var(--primary); background: rgba(59, 130, 246, 0.05); }
+    .stat-transit { border-left: 4px solid var(--secondary); background: rgba(58, 123, 213, 0.05); }
+    .stat-delivered { border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.05); }
+    .stat-delayed { border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.05); }
+    .stat-cancelled { border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.05); }
+
+    .stat-icon-wrap { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .stat-total .stat-icon-wrap { background: rgba(59, 130, 246, 0.1); color: var(--primary); }
+    .stat-transit .stat-icon-wrap { background: rgba(58, 123, 213, 0.1); color: var(--secondary); }
+    .stat-delivered .stat-icon-wrap { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .stat-delayed .stat-icon-wrap { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .stat-cancelled .stat-icon-wrap { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+    @media (max-width: 1100px) {
+        .dashboard-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+        .dashboard-stats { grid-template-columns: 1fr; }
+    }
+
+    /* --- ADMIN VISUALIZATION --- */
+    .admin-viz-section { margin-top: 2.5rem; display: none; }
+    .admin-viz-card { padding: 2rem; }
+    .viz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; }
+    .viz-title { font-size: 1.4rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
+    .viz-table-wrapper { border-radius: 12px; border: 1px solid var(--glass-border); overflow: hidden; background: rgba(0,0,0,0.2); }
+    .viz-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .viz-table th { padding: 1.2rem; background: rgba(255,255,255,0.03); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid var(--glass-border); }
+    .viz-table td { padding: 1.2rem; border-bottom: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.95rem; }
+    .viz-table tr:hover { background: rgba(255,255,255,0.02); }
+    .temp-badge { padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; }
+    .temp-hot { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .temp-cold { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .temp-normal { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
 </style>
 
 <section class="page-fade-in">
-    <!-- Page Header -->
     <div class="dashboard-header">
-        <h1 class="dashboard-title">Dashboard</h1>
-        <p class="dashboard-subtitle">Overview of supply chain operations</p>
+        <h1 class="dashboard-title" id="dashTitle">Dashboard</h1>
+        <p class="dashboard-subtitle" id="dashSubtitle">Overview of supply chain operations</p>
+    </div>
+
+    <!-- QUICK STATS ROW -->
+    <div class="dashboard-stats">
+        <div class="glass-card stat-card stat-total">
+            <div class="stat-icon-wrap">
+                <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <div class="stat-info">
+                <h4>Total Shipments</h4>
+                <div class="stat-value" id="stat-total">0</div>
+            </div>
+        </div>
+        <div class="glass-card stat-card stat-transit">
+            <div class="stat-icon-wrap">
+                <i class="fa-solid fa-truck-fast"></i>
+            </div>
+            <div class="stat-info">
+                <h4>In Transit</h4>
+                <div class="stat-value" id="stat-transit">0</div>
+            </div>
+        </div>
+        <div class="glass-card stat-card stat-delivered">
+            <div class="stat-icon-wrap">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="stat-info">
+                <h4>Delivered</h4>
+                <div class="stat-value" id="stat-delivered">0</div>
+            </div>
+        </div>
+        <div class="glass-card stat-card stat-delayed">
+            <div class="stat-icon-wrap">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div class="stat-info">
+                <h4>Delayed</h4>
+                <div class="stat-value" id="stat-delayed">0</div>
+            </div>
+        </div>
+        <div class="glass-card stat-card stat-cancelled">
+            <div class="stat-icon-wrap">
+                <i class="fa-solid fa-rectangle-xmark"></i>
+            </div>
+            <div class="stat-info">
+                <h4>Cancelled</h4>
+                <div class="stat-value" id="stat-cancelled">0</div>
+            </div>
+        </div>
     </div>
 
     <div class="dashboard-grid">
@@ -88,8 +219,8 @@
                 <a href="/my-shipments" class="btn btn-ghost op-btn-full">
                     <i class="fa-solid fa-list-ul"></i> View Inventory
                 </a>
-                <a id="liveTelemetryBtn" href="/data-stream" class="btn btn-ghost op-btn-full">
-                    <i class="fa-solid fa-tower-broadcast"></i> Live Telemetry
+                <a id="streamNavBtn" href="/data-stream" class="btn btn-ghost op-btn-full admin-btn-hidden">
+                    <i class="fa-solid fa-tower-broadcast"></i> Stream Data
                 </a>
             </div>
         </div>
@@ -97,7 +228,7 @@
         <!-- RIGHT PANEL: Recent Shipments -->
         <div class="glass-card shipments-card">
             <div class="shipments-header">
-                <h3 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Shipments</h3>
+                <h3 class="section-title" id="shipmentsSecTitle"><i class="fa-solid fa-clock-rotate-left"></i> Recent Shipments</h3>
                 <a href="/my-shipments" class="view-all-link">View All <i class="fa-solid fa-arrow-right"></i></a>
             </div>
 
@@ -108,72 +239,284 @@
             </div>
         </div>
     </div>
+
+    <!-- ADMIN EXCLUSIVE: Device Comparison Visualization -->
+    <div id="adminVizSection" class="admin-viz-section page-fade-in">
+        <div class="glass-card admin-viz-card">
+            <div class="viz-header">
+                <div class="viz-title">
+                    <i class="fa-solid fa-chart-column viz-accent-icon"></i> Device Comparison Matrix
+                    <button id="refreshVizBtn" class="viz-refresh-btn" title="Refresh Comparison Data">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                </div>
+                <div class="viz-sub-text">
+                    <i class="fa-solid fa-filter"></i> User Created Shipments Only
+                </div>
+            </div>
+            
+            <div class="viz-chart-container">
+                <canvas id="adminVizChart"></canvas>
+            </div>
+        </div>
+    </div>
 </section>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
     (async function(){
-        // Hide Live Telemetry if not admin
-        if(localStorage.getItem('user_role') !== 'admin') {
-            const ltb = document.getElementById('liveTelemetryBtn');
-            if(ltb) ltb.style.display = 'none';
-        }
-        
-        const el = document.getElementById('recentShipments');
-        try {
-            const res = await getJSON('/api/v1/shipments');
-            const data = await res.json();
+        // Enhanced Admin Visibility Logic
+        const updateTitles = () => {
+            const role = localStorage.getItem('user_role');
+            // Proactive check: either localStorage says admin, or base.html injected the admin nav button
+            const isAdmin = (role === 'admin') || !!document.querySelector('.admin-nav-btn');
             
-            if(!res.ok || !data.length) { 
-                el.innerHTML = '<div style="text-align:center; padding:3rem; opacity:0.6; border: 1px dashed var(--glass-border); border-radius: 10px;">No active shipments found.<br><br><a href="/create-shipment" style="color:var(--primary)">Create your first shipment</a></div>'; 
-                return; 
-            }
-            
-            el.innerHTML = '';
-            // Display top 5
-            data.slice(0, 5).forEach((s, index) => {
-                const item = document.createElement('div');
-                item.style.cssText = `
-                    background: rgba(255,255,255,0.03); padding: 1.2rem; border-radius: 12px;
-                    border: 1px solid var(--glass-border); display: flex; justify-content: space-between;
-                    align-items: center; animation: fadeInUp 0.5s ease forwards; animation-delay: ${index * 0.1}s;
-                    opacity: 0; transform: translateY(10px); transition: background 0.3s;
-                `;
+            const statsRow = document.querySelector('.dashboard-stats');
+            const dt = document.getElementById('dashTitle');
+            const ds = document.getElementById('dashSubtitle');
+            const st = document.getElementById('shipmentsSecTitle');
+            const btn = document.getElementById('streamNavBtn');
+
+            if(isAdmin) {
+                if(dt) dt.textContent = "Global Logistics Overview";
+                if(ds) ds.textContent = "Administrative control tower and global registry";
+                if(st) st.innerHTML = '<i class="fa-solid fa-globe"></i> Global Registry';
+                if(btn) btn.classList.remove('admin-btn-hidden');
+                if(statsRow) statsRow.style.setProperty('display', 'none', 'important');
                 
-                // Hover effect logic
-                item.onmouseenter = () => { item.style.background = 'rgba(255,255,255,0.06)'; };
-                item.onmouseleave = () => { item.style.background = 'rgba(255,255,255,0.03)'; };
+                // Show Visualization Section
+                const vizSec = document.getElementById('adminVizSection');
+                if(vizSec) vizSec.style.display = 'block';
+                
+                // Re-fetch data with all=true if we initially fetched as non-admin
+                if(!window.didAdminFetch) {
+                    window.didAdminFetch = true;
+                    refreshData(true);
+                    loadDeviceComparison();
+                }
+            } else {
+                if(dt) dt.textContent = "My Logistics Dashboard";
+                if(ds) ds.textContent = "Personal supply chain overview and tracking";
+                if(st) st.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Recent Shipments';
+                if(btn) btn.classList.add('admin-btn-hidden');
+                if(statsRow) statsRow.style.display = 'grid';
+                const vizSec = document.getElementById('adminVizSection');
+                if(vizSec) vizSec.style.display = 'none';
+            }
+        };
 
-                // Status Color Logic
-                let statusColor = 'var(--primary)'; // Default In Transit
-                const status = s.Status || 'In Transit';
-                if(status === 'Delayed') statusColor = '#f59e0b';
-                if(status === 'Delivered') statusColor = '#10b981';
-                if(status === 'Cancelled') statusColor = '#ef4444';
+        const loadDeviceComparison = async () => {
+            const ctx = document.getElementById('adminVizChart');
+            if(!ctx) return;
+            
+            try {
+                const res = await getJSON('/api/v1/admin/device-comparison');
+                const data = await res.json();
+                
+                if(!res.ok || !data.length) {
+                    return; // No data to plot
+                }
+                
+                const labels = data.map(i => i.Device);
+                const temps = data.map(i => i.Temperature || 0);
+                
+                // Status Mapping
+                const statusLevels = { 'Delivered': 3, 'In Transit': 2, 'In-Transit': 2, 'Delayed': 1 };
+                const statuses = data.map(i => statusLevels[i.Status] || 0);
+                
+                // Dynamic Bar Colors based on Status
+                const barColors = data.map(i => {
+                    if(i.Status === 'Delivered') return '#10b981'; // Green
+                    if(i.Status === 'Delayed') return '#f59e0b';   // Amber
+                    return '#3b82f6'; // Blue for Transit
+                });
+                
+                // Initialize Chart.js
+                if(window.adminChart) window.adminChart.destroy();
+                
+                window.adminChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Status Tier',
+                                data: statuses,
+                                backgroundColor: barColors,
+                                borderRadius: 6,
+                                yAxisID: 'y-status',
+                                order: 2
+                            },
+                            {
+                                label: 'Temperature (°C)',
+                                data: temps,
+                                type: 'line',
+                                borderColor: '#00d2ff',
+                                backgroundColor: 'rgba(0, 210, 255, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                yAxisID: 'y-temp',
+                                pointRadius: 4,
+                                order: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { intersect: false, mode: 'index' },
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { color: '#94a3b8', font: { family: "'Outfit', sans-serif" } } },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                titleFont: { family: "'Outfit', sans-serif" },
+                                bodyFont: { family: "'Outfit', sans-serif" },
+                                padding: 12,
+                                borderRadius: 8,
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (context.dataset.label === 'Status Tier') {
+                                            const val = context.raw;
+                                            const name = val === 3 ? 'Delivered' : val === 2 ? 'In Transit' : val === 1 ? 'Delayed' : 'Unknown';
+                                            return `Current Status: ${name}`;
+                                        }
+                                        return `${label}: ${context.raw}°C`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { family: "'Outfit', sans-serif" } } },
+                            'y-status': {
+                                type: 'linear', display: true, position: 'right',
+                                title: { display: true, text: 'Logistical Tier', color: '#10b981' },
+                                min: 0, max: 4,
+                                grid: { drawOnChartArea: false },
+                                ticks: {
+                                    stepSize: 1, color: '#94a3b8',
+                                    callback: function(value) {
+                                        if(value === 3) return 'DELIVERED';
+                                        if(value === 2) return 'TRANSIT';
+                                        if(value === 1) return 'DELAYED';
+                                        return '';
+                                    }
+                                }
+                            },
+                            'y-temp': {
+                                type: 'linear', display: true, position: 'left',
+                                title: { display: true, text: 'Temperature (°C)', color: '#00d2ff' },
+                                grid: { color: 'rgba(255,255,255,0.05)' },
+                                ticks: { color: '#94a3b8' }
+                            }
+                        }
+                    }
+                });
+            } catch(e) { console.error("Chart load error:", e); }
+        };
 
-                item.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:15px;">
-                        <div style="background:rgba(0,210,255,0.1); width:45px; height:45px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--primary); font-size: 1.2rem;">
-                            <i class="fa-solid fa-box"></i>
-                        </div>
-                        <div>
-                            <div style="font-weight:700; font-size: 1.1rem; color: white;">${s.Shipment_Number}</div>
-                            <div style="font-size:0.85rem; color:var(--text-muted); margin-top: 2px;">
-                                ${s.Goods_Type} &bull; <i class="fa-solid fa-route" style="font-size:0.7rem"></i> ${s.Route_Details}
+        // Bind Refresh Button
+        const refreshBtn = document.getElementById('refreshVizBtn');
+        if(refreshBtn) {
+            refreshBtn.addEventListener('click', async () => {
+                const icon = refreshBtn.querySelector('i');
+                icon.classList.add('spin-active');
+                await loadDeviceComparison();
+                setTimeout(() => icon.classList.remove('spin-active'), 800);
+            });
+        }
+
+        const refreshData = async (forceAdmin = false) => {
+            const role = localStorage.getItem('user_role');
+            const isAdmin = forceAdmin || (role === 'admin') || !!document.querySelector('.admin-nav-btn');
+            
+            const el = document.getElementById('recentShipments');
+            try {
+                const res = await getJSON(`/api/v1/shipments${isAdmin ? '?all=true' : ''}`);
+                const data = await res.json();
+                
+                // Calculate and display Stats
+                if(res.ok && data.length) {
+                    const totalCount = data.length;
+                    const transitCount = data.filter(s => (s.Status || 'In Transit') === 'In Transit').length;
+                    const deliveredCount = data.filter(s => s.Status === 'Delivered').length;
+                    const delayedCount = data.filter(s => s.Status === 'Delayed').length;
+                    const cancelledCount = data.filter(s => s.Status === 'Cancelled').length;
+
+                    if(document.getElementById('stat-total')) document.getElementById('stat-total').textContent = totalCount;
+                    if(document.getElementById('stat-transit')) document.getElementById('stat-transit').textContent = transitCount;
+                    if(document.getElementById('stat-delivered')) document.getElementById('stat-delivered').textContent = deliveredCount;
+                    if(document.getElementById('stat-delayed')) document.getElementById('stat-delayed').textContent = delayedCount;
+                    if(document.getElementById('stat-cancelled')) document.getElementById('stat-cancelled').textContent = cancelledCount;
+                }
+
+                if(!res.ok || !data.length) { 
+                    el.innerHTML = '<div style="text-align:center; padding:3rem; opacity:0.6; border: 1px dashed var(--glass-border); border-radius: 10px;">No active shipments found.<br><br><a href="/create-shipment" style="color:var(--primary)">Create your first shipment</a></div>'; 
+                    return; 
+                }
+                
+                el.innerHTML = '';
+                // Display top 5
+                data.slice(0, 5).forEach((s, index) => {
+                    const item = document.createElement('div');
+                    item.style.cssText = `
+                        background: var(--input-bg); padding: 1.2rem; border-radius: 12px;
+                        border: 1px solid var(--glass-border); display: flex; justify-content: space-between;
+                        align-items: center; animation: fadeInUp 0.5s ease forwards; animation-delay: ${index * 0.1}s;
+                        opacity: 0; transform: translateY(10px); transition: all 0.3s;
+                    `;
+                    
+                    // Hover effect logic
+                    item.onmouseenter = () => { 
+                        item.style.background = 'var(--glass)'; 
+                        item.style.borderColor = 'var(--primary)';
+                        item.style.transform = 'translateY(-2px)';
+                    };
+                    item.onmouseleave = () => { 
+                        item.style.background = 'var(--input-bg)'; 
+                        item.style.borderColor = 'var(--glass-border)';
+                        item.style.transform = 'translateY(0)';
+                    };
+
+                    // Status Color Logic
+                    let statusColor = 'var(--primary)'; // Default In Transit
+                    const status = s.Status || 'In Transit';
+                    const statusColors = { 'Delayed': '#f59e0b', 'Delivered': '#10b981', 'Cancelled': '#ef4444' };
+                    if(statusColors[status]) statusColor = statusColors[status];
+
+                    item.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <div style="background:rgba(59, 130, 246, 0.1); width:45px; height:45px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--primary); font-size: 1.2rem;">
+                                <i class="fa-solid fa-box"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight:700; font-size: 1.1rem; color: var(--text-main);">${s.Shipment_Number}</div>
+                                <div style="font-size:0.85rem; color:var(--text-muted); margin-top: 2px;">
+                                    ${s.Goods_Type} &bull; <i class="fa-solid fa-route" style="font-size:0.7rem"></i> ${s.Route_Details}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="color:${statusColor}; font-weight:700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">${status}</div>
-                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top: 3px;">
-                            ETA: ${new Date(s.Expected_Delivery_Date).toLocaleDateString()}
+                        <div style="text-align:right;">
+                            <div style="color:${statusColor}; font-weight:700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">${status}</div>
+                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top: 3px;">
+                                ETA: ${new Date(s.Expected_Delivery_Date).toLocaleDateString()}
+                            </div>
                         </div>
-                    </div>
-                `;
-                el.appendChild(item);
-            });
-        } catch(e) { el.innerHTML = '<div style="color: var(--accent); text-align:center;">Error loading data.</div>'; }
+                    `;
+                    el.appendChild(item);
+                });
+            } catch(e) { el.innerHTML = '<div style="color: var(--accent); text-align:center;">Error loading data.</div>'; }
+        };
+        
+        updateTitles();
+        setTimeout(updateTitles, 500);
+        setTimeout(updateTitles, 1500);
+        
+        // Initial data fetch
+        refreshData();
     })();
 </script>
 {% endblock %}

@@ -17,6 +17,10 @@ class ShipmentSchema(BaseModel):
     Shipment_Description: Optional[str] = None
     Status: Optional[str] = "In Transit"
     Notify_User: Optional[bool] = False
+    
+    # Visualization & Comparison Fields
+    Temperature: Optional[float] = None
+    Number_of_Devices: Optional[int] = 1
 
     class Config:
         json_schema_extra = {
@@ -30,6 +34,8 @@ class ShipmentSchema(BaseModel):
                 "Container_number": "CONT-A1",
                 "Goods_Type": "Pharmaceuticals",
                 "Expected_Delivery_Date": "2023-12-31T12:00:00",
-                "Status": "In Transit"
+                "Status": "In Transit",
+                "Temperature": 22.5,
+                "Number_of_Devices": 5
             }
         }

@@ -91,13 +91,8 @@ async def update_shipment(shipment_number: str, shipment: ShipmentSchema = Body(
     update_data = shipment.dict()
     
     # --- SECURITY ENFORCEMENT ---
-    # Only admins can modify the 'Status' field.
-    if is_admin:
-        # Admin explicitly sets status; fall back to existing only if truly absent
-        if update_data.get("Status") is None:
-            update_data["Status"] = existing_shipment.get("Status", "In Transit")
-    else:
-        # Regular users cannot change status, always preserve existing from DB
+    # Respect provided status, fall back to existing if absent
+    if update_data.get("Status") is None:
         update_data["Status"] = existing_shipment.get("Status", "In Transit")
     
     # Preservation of ownership (Users cannot 'steal' shipments via updates)

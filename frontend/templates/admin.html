@@ -21,7 +21,7 @@
     }
     .stat-card {
         padding: 2rem;
-        background: rgba(255, 255, 255, 0.03);
+        background: var(--glass);
         border: 1px solid var(--glass-border);
         border-radius: var(--card-radius);
         display: flex;
@@ -45,7 +45,7 @@
         color: var(--primary);
     }
     .stat-info h3 { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-    .stat-val { font-size: 2rem; font-weight: 700; color: white; margin-top: 0.2rem; }
+    .stat-val { font-size: 2rem; font-weight: 700; color: var(--text-main); margin-top: 0.2rem; }
 
     /* --- EMERGENCY ALERTS --- */
     .alerts-section {
@@ -57,11 +57,11 @@
     .alerts-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; color: #ff4b4b; font-weight: bold; }
     .alerts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
     .alert-item {
-        background: rgba(0,0,0,0.4);
+        background: var(--input-bg);
         padding: 1rem;
         border-left: 4px solid #ff4b4b;
         border-radius: 8px;
-        font-size: 0.9rem;
+        color: var(--text-main);
         animation: pulseAlert 2s infinite;
     }
     @keyframes pulseAlert {
@@ -91,12 +91,81 @@
         padding: 2rem;
         border: 1px solid var(--glass-border);
     }
-    .section-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
+    .section-title { font-size: 1.4rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 12px; margin-bottom: 2rem; position: relative; }
+    
+    /* SOURCE TOGGLE SYSTEM */
+    .source-toggle-wrap {
+        display: flex;
+        background: var(--input-bg);
+        border: 1px solid var(--glass-border);
+        padding: 5px;
+        border-radius: 30px;
+        margin: 0 auto 1.5rem;
+        width: fit-content;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        justify-content: center;
+    }
+    .source-btn {
+        padding: 8px 24px;
+        border-radius: 25px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        transition: 0.3s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .source-btn.active {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    .source-btn:hover:not(.active) {
+        background: rgba(var(--primary-rgb), 0.1);
+        color: var(--primary);
+    }
+    
+    .registry-header-flex {
+        display: flex; 
+        justify-content: space-between; 
+        align-items: flex-start; 
+        flex-wrap: wrap;
+    }
+    
+    .btn-icon-mr { margin-right: 6px; }
+
+    #view-kafka { display: none; }
+    .icon-kafka-live { color: #00d2ff !important; }
+    .icon-kafka-alert { color: #f89b29 !important; }
+    .icon-kafka-db { color: #10b981 !important; }
+
+    .admin-filter-card {
+        width: 100%;
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        background: var(--input-bg);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid var(--glass-border);
+        margin-bottom: 2rem;
+    }
     
     .data-table { width: 100%; border-collapse: collapse; }
-    .data-table th { text-align: left; padding: 1rem; border-bottom: 1px solid var(--glass-border); color: var(--text-muted); font-weight: 500; font-size: 0.85rem; text-transform: uppercase; position: sticky; top: 0; z-index: 10; background: #0b1120; }
-    .data-table td { padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.03); color: #cbd5e1; font-size: 0.95rem; }
-    .data-table tr:hover { background: rgba(255,255,255,0.02); }
+    .data-table th { 
+        text-align: left; padding: 1rem; 
+        border-bottom: 2px solid var(--glass-border); 
+        color: white; font-weight: 700; font-size: 0.85rem; 
+        text-transform: uppercase; position: sticky; top: 0; z-index: 10; 
+        background: linear-gradient(180deg, var(--secondary), var(--primary)); 
+    }
+    .data-table td { padding: 1rem; border-bottom: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.95rem; }
+    .data-table tr:hover { background: var(--glass-border); }
+    .data-table tr:nth-child(even) { background: var(--input-bg); }
 
     /* --- SCROLLBAR REFINEMENTS --- */
     .table-responsive {
@@ -152,18 +221,22 @@
     .tag-user { background: rgba(0, 210, 255, 0.15); color: var(--primary); }
     
     .btn-sm-del { background: rgba(255, 75, 75, 0.15); color: #ff4b4b; border: 1px solid rgba(255,75,75,0.3); padding: 5px; border-radius: 6px; cursor: pointer; transition: 0.3s; }
-    .btn-sm-del:hover { background: #ff4b4b; color: white; }
-    .btn-msg { background: rgba(0, 210, 255, 0.1); color: var(--primary); border: 1px solid rgba(0,210,255,0.3); padding: 5px 8px; border-radius: 6px; cursor: pointer; transition: 0.3s; font-size: 0.85rem; }
-    .btn-msg:hover { background: var(--primary); color: #0b1120; }
+    .btn-sm-del:hover { background: #ef4444; color: white; }
+    .btn-msg { background: rgba(59, 130, 246, 0.1); color: var(--primary); border: 1px solid var(--glass-border); padding: 5px 8px; border-radius: 6px; cursor: pointer; transition: 0.3s; font-size: 0.85rem; }
+    .btn-msg:hover { background: var(--primary); color: white; }
 
     /* --- COMPOSE MESSAGE MODAL --- */
     #composeMessageModal .modal-card { max-width: 500px; }
     .compose-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.2rem; }
     .compose-field label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-    .compose-field input, .compose-field textarea { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; color: white; padding: 10px 14px; font-size: 0.95rem; outline: none; transition: 0.3s; }
-    .compose-field input:focus, .compose-field textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,210,255,0.1); }
+    .compose-field input, .compose-field textarea { background: var(--input-bg); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--text-main); padding: 10px 14px; font-size: 0.95rem; outline: none; transition: 0.3s; }
+    .compose-field input:focus, .compose-field textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
     .compose-field textarea { min-height: 120px; resize: vertical; }
     .compose-recipient-tag { background: rgba(0,210,255,0.1); border: 1px solid rgba(0,210,255,0.2); border-radius: 20px; padding: 4px 12px; font-size: 0.8rem; color: var(--primary); font-weight: 600; display: inline-block; margin-bottom: 1.2rem; }
+
+    /* --- REUSABLE UTILITIES --- */
+    .form-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .mb-3 { margin-bottom: 1.5rem; }
 
     /* --- STATUS BADGES --- */
     .badge-status { 
@@ -230,9 +303,11 @@
     .btn-edit-usr:hover { background: var(--secondary); color: white; }
 
     /* Modal */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 2000; }
-    .modal-card { background: #0f172a; border: 1px solid rgba(255,255,255,0.1); width: 500px; padding: 1.5rem 2rem; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-    .modal-shipment { width: 1200px; max-height: none; overflow-y: visible; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 2000; }
+    :root[data-theme='dark'] .modal-overlay { background: rgba(0, 0, 0, 0.85); }
+    .modal-card { background: var(--modal-bg); border: 1px solid var(--glass-border); width: 500px; padding: 1.5rem 2rem; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
+    :root[data-theme='dark'] .modal-card { box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    .modal-shipment { width: 1200px; max-height: 95vh; overflow-y: auto; }
     .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; }
     .full-col { grid-column: span 3; }
     .form-group { margin-bottom: 0.5rem; position: relative; }
@@ -248,13 +323,13 @@
     .form-input { 
         width: 100%; 
         padding: 12px 15px; 
-        background: rgba(255,255,255,0.05); 
-        border: 1px solid rgba(255,255,255,0.1); 
+        background: var(--input-bg); 
+        border: 1px solid var(--glass-border); 
         border-radius: 8px; 
-        color: white; 
+        color: var(--text-main); 
         font-size: 1rem;
     }
-    .form-input:focus { border-color: var(--primary); outline: none; }
+    .form-input:focus { border-color: var(--primary); outline: none; background: var(--glass); }
     .modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem; }
     .modal-card h2 { margin-bottom: 1.5rem; }
     .global-edit-title { color: var(--primary); }
@@ -268,10 +343,10 @@
     .table-responsive { overflow-x: auto; }
 
     /* Admin specific JS-injected styles */
-    .user-info-name { font-weight: 600; color: white; }
+    .user-info-name { font-weight: 600; color: var(--text-main); }
     .user-info-email { font-size: 0.8rem; color: var(--text-muted); }
     .shipment-num-admin { color: var(--primary); font-weight: bold; }
-    .shipment-info-admin { font-size: 0.85rem; }
+    .shipment-info-admin { font-size: 0.85rem; color: var(--text-main); }
     
     
     /* FIX: Allow vertical scrolling specifically for Admin Panel */
@@ -351,9 +426,21 @@
 
     /* --- EXPORT & BROADCAST --- */
     .enterprise-actions { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
-    .btn-ent { padding: 10px 20px; border-radius: 10px; font-weight: 600; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: white; cursor: pointer; transition: 0.3s; }
-    .btn-ent:hover { background: rgba(255,255,255,0.12); transform: translateY(-2px); }
-    .btn-broadcast { border-color: #f59e0b; color: #f59e0b; }
+    .btn-ent { 
+        padding: 10px 20px; 
+        border-radius: 10px; 
+        font-weight: 700; 
+        display: flex; 
+        align-items: center; 
+        gap: 10px; 
+        border: 1px solid var(--glass-border); 
+        background: var(--input-bg); 
+        color: var(--primary); 
+        cursor: pointer; 
+        transition: 0.3s; 
+    }
+    .btn-ent:hover { background: var(--glass); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .btn-broadcast { border-color: #f59e0b; color: #f59e0b; background: rgba(245, 158, 11, 0.05); }
     .btn-broadcast:hover { background: #f59e0b; color: white; }
     
     .audit-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
@@ -367,7 +454,7 @@
     .btn-blue-glass:hover { background: #3b82f6 !important; color: white !important; }
     
     .chart-container { 
-        background: rgba(0,0,0,0.3); 
+        background: var(--input-bg); 
         padding: 1.5rem; 
         border-radius: 16px; 
         border: 1px solid var(--glass-border); 
@@ -379,10 +466,8 @@
     
     /* --- ADMIN FILTER STYLES --- */
     .admin-filter-card {
-        background: rgba(15, 23, 42, 0.4);
-        -webkit-backdrop-filter: blur(12px);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: var(--glass);
+        border: 1px solid var(--glass-border);
         border-radius: var(--card-radius);
         padding: 1.5rem 2rem;
         margin-bottom: 2rem;
@@ -390,22 +475,18 @@
         flex-wrap: wrap;
         gap: 1.5rem;
         align-items: flex-end;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         transition: transform 0.3s ease;
     }
+    :root[data-theme='dark'] .admin-filter-card { box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
     .admin-link:hover .admin-filter-card { transform: translateY(-2px); }
     .filter-category-group { flex: 0.8; min-width: 200px; }
 
     .filter-group { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 220px; }
     .filter-label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
-    /* --- UNIVERSAL DROPDOWN THEME --- */
-    select, .filter-input, .form-input, .filter-input option, select option { 
-        background-color: #0f172a !important; 
-        color: white !important; 
-        color-scheme: dark !important; 
-    }
-    .filter-input:focus, .form-input:focus { border-color: var(--primary); outline: none; background: rgba(15, 23, 42, 0.8); }
+    .filter-input:focus, .form-input:focus { border-color: var(--primary); outline: none; background: var(--input-bg); box-shadow: 0 0 0 4px rgba(37,99,235,0.1); }
+    :root[data-theme='dark'] .filter-input:focus, :root[data-theme='dark'] .form-input:focus { background: rgba(15, 23, 42, 0.8); }
     
     .stat-icon { font-size: 1.4rem; color: var(--primary); background: rgba(0,255,255,0.05); width: 40px; height: 30px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
     
@@ -423,7 +504,7 @@
     .stat-val { font-size: 1.2rem !important; }
 
     .btn-search { 
-        background: #4361ee; 
+        background: var(--primary); 
         color: white; 
         padding: 5px 25px; 
         border-radius: 50px; 
@@ -435,23 +516,22 @@
         display: flex; 
         align-items: center; 
         gap: 10px;
-        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.2);
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
         letter-spacing: 0.5px;
         font-size: 0.85rem;
     }
     .btn-search:hover { 
-        background: #3751d3; 
-        transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+        transform: translateY(-1.5px);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
     }
     .btn-search i { font-size: 0.9rem; }
 
     .btn-reset-filter { 
-        background: rgba(30, 41, 59, 1); 
-        color: white; 
+        background: var(--input-bg); 
+        color: var(--text-muted); 
         padding: 5px 20px; 
         border-radius: 50px; 
-        border: 1px solid rgba(255,255,255,0.2); 
+        border: 1px solid var(--glass-border); 
         cursor: pointer; 
         transition: 0.3s; 
         height: 38px;
@@ -459,9 +539,9 @@
         letter-spacing: 1px;
         font-size: 0.8rem;
     }
-    .btn-reset-filter:hover { background: rgba(255,255,255,0.05); border-color: white; }
+    .btn-reset-filter:hover { background: var(--glass-border); color: var(--text-main); border-color: var(--text-muted); }
 
-    .filter-input { height: 38px !important; font-size: 0.9rem !important; padding: 8px 15px !important; }
+    .filter-input { height: 38px !important; font-size: 0.9rem !important; padding: 8px 15px !important; border-radius: 10px !important; }
 
 </style>
 
@@ -522,74 +602,127 @@
 
     <!-- TAB 2: GLOBAL SHIPMENTS (Shipment Master) -->
     <div id="tab-shipments" class="tab-content">
+        
+        <div class="source-toggle-wrap">
+            <button id="toggle-user" class="source-btn active" onclick="switchShipmentSource('user')">
+                <i class="fa-solid fa-user-plus btn-icon-mr"></i> User Shipments
+            </button>
+            <button id="toggle-kafka" class="source-btn" onclick="switchShipmentSource('kafka')">
+                <i class="fa-solid fa-microchip btn-icon-mr"></i> Total Streaming Devices
+            </button>
+        </div>
 
-        <!-- LIVE AGGREGATION METRICS -->
-        <div class="stats-row" id="stats-container">
-            <div class="stat-card">
-                 <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
-                 <div class="stat-info"><h3>Total Users</h3><div class="stat-val" id="val-users">--</div></div>
+        <!-- USER SHIPMENTS VIEW -->
+        <div id="view-user">
+            <!-- LIVE AGGREGATION METRICS (USER) -->
+            <div class="stats-row" id="stats-container-user">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                    <div class="stat-info"><h3>Total Users</h3><div class="stat-val" id="val-users-user">--</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa-solid fa-box-open"></i></div>
+                    <div class="stat-info"><h3>Total User Shipments</h3><div class="stat-val" id="val-shipments-user">--</div></div>
+                </div>
+                <div class="stat-card border-bottom-transit">
+                    <div class="stat-icon icon-transit"><i class="fa-solid fa-truck-fast"></i></div>
+                    <div class="stat-info"><h3>In Transit</h3><div class="stat-val" id="count-transit-user">0</div></div>
+                </div>
+                <div class="stat-card border-bottom-delayed">
+                    <div class="stat-icon icon-delayed"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="stat-info"><h3>Delayed</h3><div class="stat-val" id="count-delayed-user">0</div></div>
+                </div>
+                <div class="stat-card border-bottom-delivered">
+                    <div class="stat-icon icon-delivered"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="stat-info"><h3>Delivered</h3><div class="stat-val" id="count-delivered-user">0</div></div>
+                </div>
+                <div class="stat-card border-bottom-cancelled">
+                    <div class="stat-icon icon-cancelled"><i class="fa-solid fa-circle-xmark"></i></div>
+                    <div class="stat-info"><h3>Cancelled</h3><div class="stat-val" id="count-cancelled-user">0</div></div>
+                </div>
             </div>
-            <div class="stat-card">
-                 <div class="stat-icon"><i class="fa-solid fa-box-open"></i></div>
-                 <div class="stat-info"><h3>Total Active Shipments</h3><div class="stat-val" id="val-shipments">--</div></div>
-            </div>
-            <div class="stat-card">
-                 <div class="stat-icon"><i class="fa-solid fa-microchip"></i></div>
-                 <div class="stat-info"><h3>Active Devices (via Kafka)</h3><div class="stat-val" id="val-devices">--</div></div>
-            </div>
-            <div class="stat-card border-bottom-transit">
-                 <div class="stat-icon icon-transit"><i class="fa-solid fa-truck-fast"></i></div>
-                 <div class="stat-info"><h3>In Transit</h3><div class="stat-val" id="count-transit">0</div></div>
-            </div>
-            <div class="stat-card border-bottom-delayed">
-                 <div class="stat-icon icon-delayed"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                 <div class="stat-info"><h3>Delayed</h3><div class="stat-val" id="count-delayed">0</div></div>
-            </div>
-            <div class="stat-card border-bottom-delivered">
-                 <div class="stat-icon icon-delivered"><i class="fa-solid fa-circle-check"></i></div>
-                 <div class="stat-info"><h3>Delivered</h3><div class="stat-val" id="count-delivered">0</div></div>
-            </div>
-            <div class="stat-card border-bottom-cancelled">
-                 <div class="stat-icon icon-cancelled"><i class="fa-solid fa-circle-xmark"></i></div>
-                 <div class="stat-info"><h3>Cancelled</h3><div class="stat-val" id="count-cancelled">0</div></div>
+
+            <div class="admin-section">
+                <div class="registry-header-flex">
+                    <div class="section-title"><i class="fa-solid fa-user-check color-primary"></i> User Registry (Manual Master)</div>
+                </div>
+                <div class="admin-filter-card">
+                    <div class="filter-group filter-category-group">
+                        <label class="filter-label">Search By</label>
+                        <select id="searchKey-user" class="filter-input">
+                            <option value="Shipment_Number">Shipment Number</option>
+                            <option value="Status">Status</option>
+                            <option value="Device">Device Id</option>
+                            <option value="created_by">Creator</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Value</label>
+                        <input type="text" id="searchValue-user" class="filter-input" placeholder="Search Master...">
+                    </div>
+                    <button class="btn-search" onclick="renderShipments()">SEARCH</button>
+                    <button class="btn-reset-filter" onclick="resetSearch('user')">RESET</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead><tr><th>Shipment ID</th><th>Creator</th><th>Source -> Destination</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody id="shipment-table-user"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <div class="admin-section">
-            <div class="section-title"><i class="fa-solid fa-earth-americas color-primary"></i> Global Master Registry (Shipment Master)</div>
-            
-            <!-- SEARCH / FILTER SECTION -->
-            <div class="admin-filter-card">
-                <div class="filter-group filter-category-group">
-                    <label class="filter-label">Search By (Key)</label>
-                    <select id="globalSearchKey" class="filter-input" onchange="toggleFilterInput()">
-                        <option value="Shipment_Number" selected>Shipment Number</option>
-                        <option value="Status">Status</option>
-                        <option value="Device">Device Id</option>
-                        <option value="created_by">Creator</option>
-                        <option value="Container_number">Container Number</option>
-                        <option value="Po_Number">PO Number</option>
-                        <option value="Route_Details">Route</option>
-                    </select>
+        <!-- KAFKA SHIPMENTS VIEW -->
+        <div id="view-kafka">
+            <!-- LIVE AGGREGATION METRICS (KAFKA) -->
+            <div class="stats-row" id="stats-container-kafka">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa-solid fa-microchip"></i></div>
+                    <div class="stat-info"><h3>Active Devices</h3><div class="stat-val" id="val-devices-kafka">--</div></div>
                 </div>
-                
-                <div class="filter-group" id="filterValueContainer">
-                    <label class="filter-label">Search Value</label>
-                    <input type="text" id="globalSearchValue" class="filter-input" placeholder="Enter value (e.g., SHP-1001)...">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa-solid fa-server"></i></div>
+                    <div class="stat-info"><h3>Total Kafka Packets</h3><div class="stat-val" id="val-shipments-kafka">--</div></div>
                 </div>
-
-                <button class="btn-search" onclick="performGlobalSearch()">
-                    <i class="fa-solid fa-magnifying-glass"></i> SEARCH
-                </button>
-                <button class="btn-reset-filter" onclick="resetGlobalSearch()">
-                    RESET
-                </button>
+                <div class="stat-card border-bottom-transit">
+                    <div class="stat-icon icon-transit icon-kafka-live"><i class="fa-solid fa-wifi"></i></div>
+                    <div class="stat-info"><h3>Live Streams</h3><div class="stat-val" id="count-transit-kafka">0</div></div>
+                </div>
+                <div class="stat-card border-bottom-delayed">
+                    <div class="stat-icon icon-delayed icon-kafka-alert"><i class="fa-solid fa-bolt"></i></div>
+                    <div class="stat-info"><h3>Alert States</h3><div class="stat-val" id="count-delayed-kafka">0</div></div>
+                </div>
+                <div class="stat-card border-bottom-delivered">
+                    <div class="stat-icon icon-delivered icon-kafka-db"><i class="fa-solid fa-database"></i></div>
+                    <div class="stat-info"><h3>Persisted</h3><div class="stat-val" id="count-delivered-kafka">0</div></div>
+                </div>
             </div>
-            <div class="table-responsive">
-                <table class="data-table">
-                    <thead><tr><th>Number</th><th>Creator</th><th>Route</th><th>Current Status</th><th>Master Override / Purge</th></tr></thead>
-                    <tbody id="shipment-table-body"></tbody>
-                </table>
+
+            <div class="admin-section">
+                <div class="registry-header-flex">
+                    <div class="section-title"><i class="fa-solid fa-microchip color-primary"></i> Kafka Registry (Automated Stream Master)</div>
+                </div>
+                <div class="admin-filter-card">
+                    <div class="filter-group filter-category-group">
+                        <label class="filter-label">Filter Stream</label>
+                        <select id="searchKey-kafka" class="filter-input">
+                            <option value="Shipment_Number">Shipment Number</option>
+                            <option value="Device">Device Id</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Value</label>
+                        <input type="text" id="searchValue-kafka" class="filter-input" placeholder="Filter Streamed...">
+                    </div>
+                    <button class="btn-search" onclick="renderShipments()">FILTER</button>
+                    <button class="btn-reset-filter" onclick="resetSearch('kafka')">RESET</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead><tr><th>Device ID</th><th>Shipment ID</th><th>Temp</th><th>Battery</th><th>Source -> Destination</th><th>Signal Status</th><th>Override</th></tr></thead>
+                        <tbody id="shipment-table-kafka"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -637,9 +770,15 @@
         <h2><i class="fa-solid fa-user-pen"></i> Edit User Profile</h2>
         <form id="userEditForm">
             <input type="hidden" id="edit-user-id">
-            <div class="form-group">
-                <label class="form-label">Username</label>
-                <input type="text" id="edit-user-name" class="form-input" required>
+            <div class="form-grid-2col">
+                <div class="form-group">
+                    <label class="form-label">First Name</label>
+                    <input type="text" id="edit-user-first" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" id="edit-user-last" class="form-input" required>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Email (Read Only)</label>
@@ -679,30 +818,43 @@
     <div class="modal-card modal-shipment">
         <h2><i class="fa-solid fa-box-archive"></i> <span class="global-edit-title">Global Shipment Override</span></h2>
         <form id="shipmentEditForm" class="form-grid">
+            <input type="hidden" id="edit_created_by">
             <div class="form-group">
                 <label class="form-label">Shipment Number (Read Only)</label>
                 <input id="edit_Shipment_Number" name="Shipment_Number" type="text" class="form-input input-disabled-look" readonly>
             </div>
             <div class="form-group">
                 <label class="form-label">Device ID</label>
-                <input id="edit_Device" name="Device" type="text" class="form-input" required>
+                <select id="edit_Device" name="Device" class="form-input" required>
+                    <option value="IOT-1150">IOT-1150</option>
+                    <option value="IOT-1151">IOT-1151</option>
+                    <option value="IOT-1152">IOT-1152</option>
+                    <option value="IOT-1153">IOT-1153</option>
+                    <option value="IOT-1154">IOT-1154</option>
+                    <option value="IOT-1155">IOT-1155</option>
+                    <option value="IOT-1156">IOT-1156</option>
+                    <option value="IOT-1157">IOT-1157</option>
+                    <option value="IOT-1158">IOT-1158</option>
+                </select>
             </div>
-            <div class="form-group full-col">
-                <label class="form-label">Standardized Route Selection</label>
-                <select id="edit_Route_Details" name="Route_Details" class="form-input color-scheme-dark" required>
-                    <option value="" disabled selected>Select Global Route</option>
-                    <option>Newyork, USA → Chennai, India</option>
-                    <option>Chennai, India → Newyork, USA</option>
-                    <option>Chennai, India → London, UK</option>
-                    <option>Bengaluru, India → Newyork, USA</option>
-                    <option>London, UK → Chennai, India</option>
-                    <option>Newyork, USA → London, UK</option>
-                    <option>Bengaluru, India → London, UK</option>
-                    <option>Newyork, USA → Bengaluru, India</option>
-                    <option>Chennai, India → Bengaluru, India</option>
-                    <option>London, UK → Bengaluru, India</option>
-                    <option>Bengaluru, India → Chennai, India</option>
-                    <option>London, UK → Newyork, USA</option>
+            <div class="form-group">
+                <label class="form-label">Origin Hub</label>
+                <select id="edit_Origin" class="form-input" required>
+                    <option value="" disabled selected>Select Origin</option>
+                    <option>Newyork, USA</option>
+                    <option>Chennai, India</option>
+                    <option>London, UK</option>
+                    <option>Bengaluru, India</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Destination Hub</label>
+                <select id="edit_Destination" class="form-input" required>
+                    <option value="" disabled selected>Select Destination</option>
+                    <option>Newyork, USA</option>
+                    <option>Chennai, India</option>
+                    <option>London, UK</option>
+                    <option>Bengaluru, India</option>
                 </select>
             </div>
             <div class="form-group">
@@ -727,11 +879,11 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Expected Delivery</label>
-                <input id="edit_Expected_Delivery_Date" name="Expected_Delivery_Date" type="datetime-local" class="form-input input-date-dark" required>
+                <input id="edit_Expected_Delivery_Date" name="Expected_Delivery_Date" type="datetime-local" class="form-input" required>
             </div>
             <div class="form-group">
                 <label class="form-label">Global Status Override</label>
-                <select id="edit_Status" name="Status" class="form-input color-scheme-dark" required>
+                <select id="edit_Status" name="Status" class="form-input" required>
                     <option value="In Transit">In Transit</option>
                     <option value="Delayed">Delayed</option>
                     <option value="Delivered">Delivered</option>
@@ -775,17 +927,53 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    /* MODIFIER: FOR ADMIN ONLY, OVERRIDE BASE CONTAINER PADDING FOR TRUE WIDESCREEN */
-    document.addEventListener('DOMContentLoaded', () => {
-        const mainContainer = document.querySelector('main.container');
-        if(mainContainer) {
-            mainContainer.style.maxWidth = '100vw';
-            mainContainer.style.padding = '1.5rem 3rem';
-        }
-    });
-
     let trendsChart = null;
     let currentUserEmail = "";
+    let allShipments = [];
+    let kafkaShipments = [];
+    let currentSource = 'user'; // 'user' or 'kafka'
+    let sseSource = null;
+
+    // Source Switching
+    window.switchShipmentSource = function(mode) {
+        currentSource = mode;
+        document.getElementById('toggle-user').classList.toggle('active', mode === 'user');
+        document.getElementById('toggle-kafka').classList.toggle('active', mode === 'kafka');
+        
+        document.getElementById('view-user').style.display = mode === 'user' ? 'block' : 'none';
+        document.getElementById('view-kafka').style.display = mode === 'kafka' ? 'block' : 'none';
+        
+        renderShipments();
+    };
+
+    // Initialize SSE for Kafka Tracking in Admin
+    function initAdminSSE() {
+        if(sseSource) return;
+        sseSource = new EventSource('/api/v1/events');
+        sseSource.onmessage = (e) => {
+            try {
+                const data = JSON.parse(e.data);
+                if(data.type === 'broadcast') return;
+                
+                const idx = kafkaShipments.findIndex(s => s.Shipment_Number === data.Shipment_Number);
+                const kafkaEntry = {
+                    ...data,
+                    created_by: 'KAFKA_STREAM',
+                    Route_Details: data.Location || data.Route_Details || 'Unknown Route',
+                    Status: data.Status || 'In Transit',
+                    is_kafka: true,
+                    is_live: true
+                };
+                
+                if(idx > -1) kafkaShipments[idx] = kafkaEntry;
+                else kafkaShipments.unshift(kafkaEntry);
+                
+                if(kafkaShipments.length > 50) kafkaShipments.pop();
+                
+                if(currentSource === 'kafka') renderShipments();
+            } catch(err) { console.error("SSE Parse Error", err); }
+        };
+    }
 
     // 0. System Health Check
     async function checkHealth() {
@@ -815,9 +1003,8 @@
         document.getElementById(id).classList.add('active');
         btn.classList.add('active');
 
-        // State-Aware Data Refresh
         if(id === 'tab-users') loadUsers();
-        if(id === 'tab-shipments') { loadGlobalShipments(); loadStats(); }
+        if(id === 'tab-shipments') { loadShipments(); loadStats(); }
         if(id === 'tab-analytics') loadTrends();
         if(id === 'tab-audit') loadAuditLogs();
     }
@@ -843,10 +1030,6 @@
         document.getElementById('maint-toggle').checked = isActive;
     }
 
-    async function checkMaintenanceStatus() {
-         // This can be checked occasionally or pulled on load
-    }
-
     // Business Reports Export
     function exportData(type) {
         window.location.href = `/api/v1/admin/export/${type}?token=${getToken()}`;
@@ -863,7 +1046,7 @@
         const res = await fetch('/api/v1/admin/broadcast', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
-            body: JSON.stringify({ message: msg, expires_at: new Date(Date.now() + 3600000).toISOString() }) // 1 hour expiry
+            body: JSON.stringify({ message: msg, expires_at: new Date(Date.now() + 3600000).toISOString() })
         });
         if(res.ok) {
             addLog(`Global broadcast transmitted: "${msg}"`);
@@ -918,7 +1101,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { beginAtZero: true, grid: { color: 'var(--glass-border)' } },
                         x: { grid: { display: false } }
                     },
                     plugins: { legend: { display: false } }
@@ -937,13 +1120,25 @@
         const res = await getJSON('/api/v1/admin/stats');
         if(res.ok) {
             const data = await res.json();
-            document.getElementById('val-users').textContent = data.total_users;
-            document.getElementById('val-shipments').textContent = data.total_shipments;
-            document.getElementById('val-devices').textContent = data.active_devices;
+            
+            // Populate User Stats
+            document.getElementById('val-users-user').textContent = data.total_users;
+            document.getElementById('val-shipments-user').textContent = data.user_shipments.total;
+            document.getElementById('count-transit-user').textContent = data.user_shipments.transit;
+            document.getElementById('count-delayed-user').textContent = data.user_shipments.delayed;
+            document.getElementById('count-delivered-user').textContent = data.user_shipments.delivered;
+            document.getElementById('count-cancelled-user').textContent = data.user_shipments.cancelled;
+
+            // Populate Kafka Stats
+            document.getElementById('val-devices-kafka').textContent = data.kafka_shipments.devices;
+            document.getElementById('val-shipments-kafka').textContent = data.kafka_shipments.total;
+            document.getElementById('count-transit-kafka').textContent = data.kafka_shipments.transit;
+            document.getElementById('count-delayed-kafka').textContent = data.kafka_shipments.delayed;
+            document.getElementById('count-delivered-kafka').textContent = data.kafka_shipments.delivered;
         }
     }
 
-    // 2. Load Users with Enhanced Controls
+    // 2. Load Users
     async function loadUsers() {
         const res = await getJSON('/api/v1/admin/users');
         if(res.ok) {
@@ -962,7 +1157,6 @@
                 const toggleClass = u.is_admin ? 'btn-demote' : 'btn-promote';
                 const toggleTitle = u.is_admin ? 'Demote to User' : 'Promote to Admin';
 
-                // HIDE COLUMN HEADER IF NOT SUPER ADMIN
                 const thAction = document.getElementById('th-command-action');
                 if(thAction) thAction.style.display = isSuperAdmin ? '' : 'none';
 
@@ -971,10 +1165,10 @@
                     actionColumnHtml = `
                         <td>
                             <div class="user-actions-flex">
-                                <button class="btn-action btn-edit-usr" onclick="openUserModal('${u._id}', '${u.username}', '${u.email}')" title="Edit Profile">
+                                <button class="btn-action btn-edit-usr" onclick="openUserModal('${u._id}', '${u.first_name}', '${u.last_name}', '${u.email}')" title="Edit Profile">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
-                                <button class="btn-msg" onclick="openMessageModal('${u.email}', '${u.username}')" title="Send Direct Message"><i class="fa-solid fa-message"></i></button>
+                                <button class="btn-msg" onclick="openMessageModal('${u.email}', '${u.first_name} ${u.last_name}')" title="Send Direct Message"><i class="fa-solid fa-message"></i></button>
                                 <button class="btn-action ${toggleClass}" onclick="toggleRole('${u._id}', ${!u.is_admin})" title="${toggleTitle}">${toggleIcon}</button>
                                 <button class="btn-sm-del" onclick="deleteUser('${u._id}', '${u.email}')" title="Delete User"><i class="fa-solid fa-user-xmark"></i></button>
                             </div>
@@ -984,7 +1178,7 @@
 
                 tr.innerHTML = `
                     <td>
-                        <div class="user-info-name">${u.username}</div>
+                        <div class="user-info-name">${u.first_name} ${u.last_name}</div>
                         <div class="user-info-email">${u.email}</div>
                     </td>
                     <td><span class="tag ${roleClass}">${roleLabel} ${isMe ? '(Me)' : ''}</span></td>
@@ -996,16 +1190,120 @@
         }
     }
 
+    // 3. Load Shipments (Universal Master Load)
+    async function loadShipments() {
+        const res = await getJSON('/api/v1/shipments?all=true');
+        if(res.ok) {
+            allShipments = await res.json();
+        }
+        await loadKafkaArchive();
+        renderShipments();
+    }
+
+    async function loadKafkaArchive() {
+        const res = await getJSON('/api/v1/admin/device-stream');
+        if(res.ok) {
+            const history = await res.json();
+            // Merge into kafkaShipments, avoiding duplicates already captured by live stream
+            history.forEach(h => {
+                const exists = kafkaShipments.find(s => s.Shipment_Number === h.Shipment_Number);
+                if(!exists) {
+                    h.is_live = false;
+                    kafkaShipments.push(h);
+                }
+            });
+            // Update stats to show persisted count
+            const persistedEl = document.getElementById('count-delivered-kafka');
+            if(persistedEl) persistedEl.textContent = history.length;
+        }
+    }
+
+    function renderShipments() {
+        const container = currentSource === 'user' ? 'user' : 'kafka';
+        const query = (document.getElementById(`searchValue-${container}`)?.value || "").toLowerCase();
+        const key = document.getElementById(`searchKey-${container}`)?.value || "Shipment_Number";
+        const tbody = document.getElementById(`shipment-table-${container}`);
+        tbody.innerHTML = '';
+
+        let dataToRender = currentSource === 'user' ? allShipments : kafkaShipments;
+
+        // Ensure "User Created" view strictly excludes system-generated Kafka shipments
+        if (currentSource === 'user') {
+            dataToRender = dataToRender.filter(s => s.is_kafka !== true && s.created_by !== 'KAFKA_SYSTEM');
+        }
+
+        const filtered = dataToRender.filter(s => {
+            if(!query) return true;
+            const val = String(s[key] || "").toLowerCase();
+            return val.includes(query);
+        });
+
+        if(filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:3rem; color:var(--text-muted);">No ${currentSource} registries matching criteria.</td></tr>`;
+            return;
+        }
+
+        filtered.forEach(s => {
+            const tr = document.createElement('tr');
+            let badgeClass = 'badge-transit';
+            const status = (s.Status || 'In Transit').toLowerCase();
+            if(status.includes('delay')) badgeClass = 'badge-delayed';
+            if(status.includes('deliver')) badgeClass = 'badge-delivered';
+            if(status.includes('cancel')) badgeClass = 'badge-cancelled';
+
+            if(currentSource === 'user') {
+                tr.innerHTML = `
+                    <td class="shipment-num-admin">${s.Shipment_Number}</td>
+                    <td class="shipment-info-admin">${s.created_by}</td>
+                    <td class="shipment-info-admin">${s.Route_Details}</td>
+                    <td><span class="badge-status ${badgeClass}">${s.Status || 'IN TRANSIT'}</span></td>
+                    <td>
+                        <div class="shipment-actions-flex">
+                            <button class="btn-action btn-blue-glass" onclick="openShipmentEdit('${s.Shipment_Number}', false)" title="Master Override"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-sm-del" onclick="deleteShipment('${s.Shipment_Number}')" title="Purge"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </td>
+                `;
+            } else {
+                const isLive = s.is_live !== false; 
+                const badgeText = isLive ? 'LIVE' : 'PERSISTED';
+                const badgeClassMap = isLive ? 'badge-transit' : 'badge-delivered';
+                const statusLabel = isLive ? (s.Status || 'STREAMING') : (s.Status || 'ARCHIVED');
+
+                tr.innerHTML = `
+                    <td class="shipment-num-admin">${s.Device} <span class="badge-status ${badgeClassMap}" style="font-size:0.6rem; margin-left:5px;">${badgeText}</span></td>
+                    <td class="shipment-info-admin" style="color:var(--primary); font-weight:bold;">${s.Shipment_Number || 'N/A'}</td>
+                    <td class="shipment-info-admin"><span style="color:#ef4444; font-weight:700;">${s.Temperature || '--'}°C</span></td>
+                    <td class="shipment-info-admin"><span style="color:#10b981; font-weight:700;">${s.Battery || '--'}</span></td>
+                    <td class="shipment-info-admin">${s.Route_Details || 'N/A'}</td>
+                    <td><span class="badge-status ${badgeClass}">${statusLabel}</span></td>
+                    <td>
+                        <div class="shipment-actions-flex">
+                            <button class="btn-action btn-blue-glass" onclick="openShipmentEdit('${s.Shipment_Number}', true)" title="View Trace"><i class="fa-solid fa-pen"></i></button>
+                            ${!isLive ? `<button class="btn-sm-del" onclick="deleteTelemetry('${s._id}')" title="Purge Telemetry"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+                        </div>
+                    </td>
+                `;
+            }
+            tbody.appendChild(tr);
+        });
+    }
+
+    window.resetSearch = function(mode) {
+        document.getElementById(`searchValue-${mode}`).value = '';
+        renderShipments();
+    };
+
     // Modal Helpers
-    function openUserModal(id, name, email) {
+    function openUserModal(id, first, last, email) {
         document.getElementById('edit-user-id').value = id;
-        document.getElementById('edit-user-name').value = name;
+        document.getElementById('edit-user-first').value = first;
+        document.getElementById('edit-user-last').value = last;
         document.getElementById('edit-user-email').value = email;
         document.getElementById('userEditModal').style.display = 'flex';
     }
     function closeUserModal() { document.getElementById('userEditModal').style.display = 'none'; }
 
-    // --- DIRECT MESSAGE HELPERS ---
     function openMessageModal(email, username) {
         document.getElementById('compose-recipient-email').value = email;
         document.getElementById('compose-recipient-display').innerHTML = `<i class="fa-solid fa-user"></i> To: <strong>${username}</strong> &lt;${email}&gt;`;
@@ -1037,13 +1335,14 @@
     document.getElementById('userEditForm').onsubmit = async (e) => {
         e.preventDefault();
         const id = document.getElementById('edit-user-id').value;
-        const name = document.getElementById('edit-user-name').value;
+        const first = document.getElementById('edit-user-first').value;
+        const last = document.getElementById('edit-user-last').value;
         const res = await fetch(`/api/v1/admin/users/${id}`, {
             method: 'PUT',
             headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: name })
+            body: JSON.stringify({ first_name: first, last_name: last })
         });
-        if(res.ok) { addLog(`Updated user ${name}`); loadUsers(); closeUserModal(); showGlobalModal('Success', `User ${name} updated.`, 'success'); }
+        if(res.ok) { addLog(`Updated user ${first} ${last}`); loadUsers(); closeUserModal(); showGlobalModal('Success', `User ${first} updated.`, 'success'); }
         else { showGlobalModal('Update Failed', "Unable to save user profile changes.", 'error'); }
     };
 
@@ -1058,83 +1357,6 @@
             const error = await res.json();
             showGlobalModal('System Error', error.detail || "Action failed", 'error'); 
         }
-    }
-
-    // 3. Load Global Shipments (Leveraging the newly admin-aware get_shipments)
-    async function loadGlobalShipments() {
-        const res = await getJSON('/api/v1/shipments?all=true');
-        if(res.ok) {
-            allShipments = await res.json();
-            renderGlobalTable(allShipments);
-            updateStatusMetrics(allShipments); // Always update boxes from Global Totals
-        }
-    }
-
-    function updateStatusMetrics(allData) {
-        const metrics = { 'transit': 0, 'delayed': 0, 'delivered': 0, 'cancelled': 0 };
-        if(allData && allData.length > 0) {
-            allData.forEach(s => {
-                const sRaw = (s.Status || 'In Transit').toLowerCase();
-                if(sRaw.includes('transit')) metrics['transit']++;
-                else if(sRaw.includes('delayed')) metrics['delayed']++;
-                else if(sRaw.includes('delivered')) metrics['delivered']++;
-                else if(sRaw.includes('cancelled')) metrics['cancelled']++;
-                else metrics['transit']++; // Default to transit for any unknown string
-            });
-        }
-        
-        // Update UI counters (IDs must match HTML precisely)
-        const transitEl = document.getElementById('count-transit');
-        const delayedEl = document.getElementById('count-delayed');
-        const deliveredEl = document.getElementById('count-delivered');
-        const cancelledEl = document.getElementById('count-cancelled');
-
-        if(transitEl) transitEl.textContent = metrics['transit'];
-        if(delayedEl) delayedEl.textContent = metrics['delayed'];
-        if(deliveredEl) deliveredEl.textContent = metrics['delivered'];
-        if(cancelledEl) cancelledEl.textContent = metrics['cancelled'];
-        
-        // Also update the "Total Active Shipments" card from the actual data array for 100% parity
-        const totalBox = document.getElementById('val-shipments');
-        if(totalBox) totalBox.textContent = allData.length;
-    }
-
-    function renderGlobalTable(data) {
-            const tbody = document.getElementById('shipment-table-body');
-            tbody.innerHTML = '';
-            
-            if(!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No shipments match your current filter.</td></tr>';
-                return;
-            }
-
-            // We show all matching data, reversed so newest is on top.
-            [...data].reverse().forEach(s => {
-                const tr = document.createElement('tr');
-                
-                // Track Status for badge class
-                const status = s.Status || 'In Transit';
-                
-                // Determine Badge Class
-                let badgeClass = 'badge-transit';
-                if(status === 'Delayed') badgeClass = 'badge-delayed';
-                if(status === 'Delivered') badgeClass = 'badge-delivered';
-                if(status === 'Cancelled') badgeClass = 'badge-cancelled';
-
-                tr.innerHTML = `
-                    <td class="shipment-num-admin">${s.Shipment_Number}</td>
-                    <td class="shipment-info-admin">${s.created_by}</td>
-                    <td class="shipment-info-admin">${s.Route_Details}</td>
-                    <td><span class="badge-status ${badgeClass}">${status}</span></td>
-                    <td>
-                        <div class="shipment-actions-flex">
-                            <button class="btn-action btn-blue-glass" onclick="editShipment('${s.Shipment_Number}')" title="Master Override"><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn-sm-del" onclick="deleteGlobalShipment('${s.Shipment_Number}')" title="Universal Purge"><i class="fa-solid fa-trash-can"></i></button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
     }
 
     // --- SEARCH LOGIC ---
@@ -1170,43 +1392,35 @@
     }
 
     function performGlobalSearch() {
-        const key = document.getElementById('globalSearchKey').value;
-        const val = document.getElementById('globalSearchValue').value.toLowerCase().trim();
-
-        if(!val) {
-            renderGlobalTable(allShipments);
-            return;
-        }
-
-        const filtered = allShipments.filter(s => {
-            const itemValue = String(s[key] || '').toLowerCase();
-            return itemValue.includes(val);
-        });
-
-        renderGlobalTable(filtered);
-        addLog(`System Registry filtered by ${key}: "${val}"`);
+        renderShipments();
+        const val = document.getElementById('globalSearchValue').value;
+        addLog(`System Registry filtered by ${document.getElementById('globalSearchKey').value}: "${val}"`);
     }
 
     function resetGlobalSearch() {
         document.getElementById('globalSearchKey').value = 'Shipment_Number';
         toggleFilterInput();
         document.getElementById('globalSearchValue').value = '';
-        renderGlobalTable(allShipments);
+        renderShipments();
         addLog('System Registry filter reset to default view.');
     }
 
-    let allShipments = [];
-
-    function editShipment(num) {
-        const shipment = allShipments.find(s => s.Shipment_Number === num);
+    function openShipmentEdit(num, isKafka) {
+        const source = isKafka ? kafkaShipments : allShipments;
+        const shipment = source.find(s => s.Shipment_Number === num);
         if(!shipment) return;
 
-        addLog(`Initiating Shipment Master Override for ${num}`);
-        
-        // Fill Modal
         document.getElementById('edit_Shipment_Number').value = shipment.Shipment_Number;
-        document.getElementById('edit_Device').value = shipment.Device;
-        document.getElementById('edit_Route_Details').value = shipment.Route_Details;
+        document.getElementById('edit_Device').value = shipment.Device || "";
+        document.getElementById('edit_created_by').value = shipment.created_by || "";
+        
+        // Split and populate hubs
+        if(shipment.Route_Details && shipment.Route_Details.includes(' → ')) {
+            const parts = shipment.Route_Details.split(' → ');
+            document.getElementById('edit_Origin').value = parts[0];
+            document.getElementById('edit_Destination').value = parts[1];
+        }
+
         document.getElementById('edit_Goods_Type').value = shipment.Goods_Type || "N/A";
         document.getElementById('edit_Po_Number').value = shipment.Po_Number || "N/A";
         document.getElementById('edit_NDC_Number').value = shipment.NDC_Number || "N/A";
@@ -1229,77 +1443,81 @@
 
     document.getElementById('shipmentEditForm').onsubmit = async (e) => {
         e.preventDefault();
-        const raw = Object.fromEntries(new FormData(e.target).entries());
-        if(raw.Expected_Delivery_Date) raw.Expected_Delivery_Date = new Date(raw.Expected_Delivery_Date).toISOString();
-        const num = raw.Shipment_Number;
+        const num = document.getElementById('edit_Shipment_Number').value;
+        const origin = document.getElementById('edit_Origin').value;
+        const destination = document.getElementById('edit_Destination').value;
+        
+        const payload = {
+            Shipment_Number: num,
+            Device: document.getElementById('edit_Device').value,
+            Route_Details: `${origin} → ${destination}`,
+            Goods_Type: document.getElementById('edit_Goods_Type').value,
+            Po_Number: document.getElementById('edit_Po_Number').value,
+            NDC_Number: document.getElementById('edit_NDC_Number').value,
+            Serial_Number_of_Goods: document.getElementById('edit_Serial_Number_of_Goods').value,
+            Container_number: document.getElementById('edit_Container_number').value,
+            Batch_ID: document.getElementById('edit_Batch_ID').value,
+            Shipment_Description: document.getElementById('edit_Shipment_Description').value,
+            Status: document.getElementById('edit_Status').value,
+            Expected_Delivery_Date: document.getElementById('edit_Expected_Delivery_Date').value
+        };
 
-        // --- ADMINISTRATIVE NOTIFICATION PROMPT ---
-        // Before final submission, ask the admin if they want to dispatch a notification to the user.
-        confirmGlobalModal(
-            'Dispatch User Notification?', 
-            `You are about to save changes to shipment ${num}. Would you like to automatically notify the shipment creator (${allShipments.find(s => s.Shipment_Number === num)?.created_by}) about these modifications?`, 
-            async () => {
-                // Admin chose: YES, NOTIFY USER
-                raw.Notify_User = true;
-                await submitShipmentUpdate(num, raw);
-            },
-            async () => {
-                // Admin chose: NO, JUST SAVE
-                raw.Notify_User = false;
-                await submitShipmentUpdate(num, raw);
-            },
-            'YES, NOTIFY',
-            'SURE, JUST SAVE'
-        );
-    };
-
-    async function submitShipmentUpdate(num, payload) {
         const res = await fetch(`/api/v1/shipments/${num}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+            headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
         if(res.ok) {
-            addLog(`Shipment ${num} successfully modified via Master Override (Notification: ${payload.Notify_User ? 'Sent' : 'Skipped'}).`);
+            addLog(`Global Master Override successful for shipment ${num}`);
             closeShipmentModal();
-
-            // ── INSTANT OPTIMISTIC UPDATE ──────────────────────────────────
-            const idx = allShipments.findIndex(s => s.Shipment_Number === num);
-            if(idx !== -1) {
-                allShipments[idx] = { ...allShipments[idx], ...payload };
+            loadShipments();
+            loadStats();
+            
+            // Notification Workflow
+            const userEmail = document.getElementById('edit_created_by').value;
+            if(userEmail && userEmail !== 'KAFKA_SYSTEM' && userEmail !== 'N/A') {
+                confirmGlobalModal('User Notification', `Shipment ${num} updated. notify ${userEmail} regarding these changes?`, async () => {
+                    const notifyRes = await fetch('/api/v1/admin/message', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            recipient_email: userEmail,
+                            title: `Admin Update: Shipment ${num}`,
+                            message: `Admin has updated details for shipment ${num}. Current Status: ${document.getElementById('edit_Status').value}. Location: ${origin} → ${destination}.`
+                        })
+                    });
+                    if(notifyRes.ok) { showToast(`Notification dispatched to ${userEmail}.`, 'success'); addLog(`User ${userEmail} notified of shipment ${num} change.`); }
+                });
+            } else {
+                showGlobalModal('Registry Synchronized', `Shipment ${num} universally updated.`, 'success');
             }
-            renderGlobalTable(allShipments);
-            updateStatusMetrics(allShipments);
-
-            // ── BACKGROUND SERVER SYNC ─────────────────────────────────────
-            await loadGlobalShipments();
-            await loadStats();
-
-            showGlobalModal('Override Success', `All tables & metrics updated for ${num}`, 'success');
         } else {
-            showGlobalModal('Override Failed', "Critical error during registry modification.", 'error');
+            const err = await res.json();
+            showGlobalModal('Override Failed', err.detail || "Unable to persist shipment modifications.", 'error');
         }
-    }
+    };
 
-    // Actions
-    async function deleteUser(id, email) {
-        confirmGlobalModal('🚨 Critical Security Action', `PRUDENCE: Deleting user ${email} is permanent. Continue?`, async () => {
-            const res = await fetch(`/api/v1/admin/users/${id}`, {
+    async function deleteTelemetry(id) {
+        if(!id) return;
+        confirmGlobalModal('🧪 Registry Purge', `Universal Master Override: Are you sure you want to delete this specific telemetry record from the archive?`, async () => {
+            const res = await fetch(`/api/v1/admin/device-stream/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': 'Bearer ' + getToken() }
             });
             if(res.ok) { 
-                addLog(`User ${email} permanently purged from registry.`); 
-                loadUsers(); 
+                addLog(`Telemetry record ${id} globally purged.`); 
+                // Remove from local array to update UI immediately
+                kafkaShipments = kafkaShipments.filter(s => s._id !== id);
+                renderShipments(); 
                 loadStats();
-                showGlobalModal('Purge Complete', `Identity ${email} removed.`, 'success');
+                showGlobalModal('Registry Updated', `Telemetry record purged.`, 'success');
             } 
-            else { showGlobalModal('Action Failed', "Unable to delete user.", 'error'); }
+            else { showGlobalModal('Error', "Telemetry deletion failed.", 'error'); }
         });
     }
 
-    async function deleteGlobalShipment(num) {
+    async function deleteShipment(num) {
         confirmGlobalModal('📦 Registry Purge', `Universal Master Override: Delete shipment ${num} universally?`, async () => {
             const res = await fetch(`/api/v1/shipments/${num}`, {
                 method: 'DELETE',
@@ -1307,14 +1525,13 @@
             });
             if(res.ok) { 
                 addLog(`Shipment ${num} globally deleted.`); 
-                loadGlobalShipments(); 
+                loadShipments(); 
                 loadStats();
                 showGlobalModal('Registry Updated', `Shipment ${num} purged.`, 'success');
             } 
             else { showGlobalModal('Error', "Master Registry deletion failed.", 'error'); }
         });
     }
-
 
     // Start everything
     window.onload = async () => {
@@ -1324,11 +1541,14 @@
             currentUserEmail = me.email;
         }
 
-        loadStats();
-        loadUsers();
-        loadGlobalShipments();
+        initAdminSSE();
+        await loadStats();
+        await loadUsers();
+        await loadShipments();
+        await loadAuditLogs();
+        await loadTrends();
         checkHealth();
-        setInterval(checkHealth, 10000); // Check health every 10s
+        setInterval(checkHealth, 10000);
     };
 </script>
 {% endblock %}

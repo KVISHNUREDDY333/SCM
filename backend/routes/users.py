@@ -13,6 +13,7 @@ from backend.models.user import (
     UserSchema, 
     GoogleAuthSchema, 
     ForgotPasswordSchema, 
+    VerifyOTPSchema,
     ResetPasswordSchema
 )
 from backend.config.database import user_collection, otp_collection, session_collection
@@ -28,6 +29,17 @@ router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 ADMIN_EMAILS = ["vishnukamasani3@gmail.com"]
+
+# ---------- EMAIL VALIDATION HELPER ----------
+import re
+def is_valid_email(email: str) -> bool:
+    """Verifies that an email is a strictly formatted Gmail address."""
+    # Enforce strict Gmail only policy
+    if not email.lower().endswith("@gmail.com"):
+        return False
+    
+    regex = r'^[a-zA-Z0-9+_.-]+@gmail\.com$'
+    return re.match(regex, email.lower()) is not None
 
 # ---------- EMAIL HELPER FOR OTP ----------
 def send_otp_email(recipient_email: str, otp: str) -> None:
@@ -115,7 +127,11 @@ async def manage_user_sessions(user_id: str, email: str, access_token: str):
 @router.post("/signup")
 @limiter.limit("5/minute") 
 async def create_user(request: Request, response: Response, users: UserSchema = Body(...)):
-    # Check if user exists
+    # 1. Strict Format Validation (Google Protocol)
+    if not is_valid_email(users.email):
+        raise HTTPException(status_code=400, detail="Only verified Google accounts (@gmail.com) are accepted for registration.")
+
+    # 2. Duplicate Check
     if await user_collection.find_one({"email": users.email}):
         raise HTTPException(status_code=400, detail="Email already registered")
     
@@ -123,7 +139,9 @@ async def create_user(request: Request, response: Response, users: UserSchema = 
     
     # Create User Dictionary
     user_dict = {
-        "username": users.username, # Saves the username provided at signup
+        "first_name": users.first_name,
+        "last_name": users.last_name,
+        "username": f"{users.first_name} {users.last_name}", # Combined name
         "email": users.email,
         "password": hashed_password,
         "auth_provider": "local",
@@ -237,6 +255,40 @@ async def google_login(request: Request, response: Response, payload: GoogleAuth
     
     return resp
 
+# --- 3.5 VERIFY GOOGLE EMAIL ROUTE (DEEP IDENTITY PROBE) ---
+import smtplib
+import socket
+
+@router.get("/auth/verify-google-email")
+async def verify_google_email(email: str):
+    """Deep inspection: Performs an SMTP handshake with Google's database to verify existence."""
+    if not is_valid_email(email):
+         raise HTTPException(status_code=400, detail="Invalid format. Only @gmail.com accounts are accepted.")
+    
+    # Deep Verification: RCPT Handshake with Google's MX cluster
+    try:
+        # Use a timeout to ensure real-time responsiveness
+        server = smtplib.SMTP(timeout=5) 
+        server.connect('gmail-smtp-in.l.google.com')
+        server.helo()
+        server.mail('verify@scmxpertlite.com')
+        code, _ = server.rcpt(email)
+        server.quit()
+        
+        # 250 = Active Google Identity confirmed in database
+        if code == 250:
+            return {"message": "Google Identity Verified", "verified": True}
+        else:
+            raise HTTPException(status_code=400, detail="This email is not a registered Google account. Please use a valid, active Gmail.")
+    except (smtplib.SMTPConnectError, socket.error):
+        # Fallback for isolated environments where Port 25 is restricted by ISP/Firewall
+        # If we can't reach the server, we respect the format but log the link failure
+        print(f"CRITICAL: Link failure to Google MX cluster for {email} verification.")
+        return {"message": "Identity format verified (Offline link to Google)", "verified": True}
+    except Exception as e:
+        print(f"Deep verify error: {e}")
+        raise HTTPException(status_code=400, detail="System link failed. Please retry verification.")
+
 # --- 4. PASSWORD RESET LOGIC ---
 def generate_otp():
     return str(random.randint(100000, 999999))
@@ -246,8 +298,7 @@ async def forgot_password(payload: ForgotPasswordSchema):
     # 1. Check if user exists
     user = await user_collection.find_one({"email": payload.email})
     if not user:
-        # Do not reveal whether email exists
-        return {"message": "If email exists, OTP sent."}
+        raise HTTPException(status_code=404, detail="Please enter a registered email.")
 
     # 2. Generate OTP
     otp = generate_otp()
@@ -268,6 +319,27 @@ async def forgot_password(payload: ForgotPasswordSchema):
     send_otp_email(payload.email, otp)
 
     return {"message": "OTP sent to email"}
+    
+
+@router.post("/validate-otp")
+async def validate_otp(payload: VerifyOTPSchema):
+    # 1. Find OTP record
+    record = await otp_collection.find_one({"email": payload.email})
+    
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid request or OTP expired")
+    
+    # 2. Verify OTP and Expiration
+    if record["otp"] != payload.otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+        
+    now_utc = datetime.utcnow().replace(tzinfo=None)
+    db_expires_at = record["expires_at"].replace(tzinfo=None)
+
+    if now_utc > db_expires_at:
+        raise HTTPException(status_code=400, detail="OTP Expired")
+
+    return {"message": "OTP Verified Successfully", "valid": True}
 
 
 @router.post("/reset-password")
@@ -312,13 +384,49 @@ async def get_current_user(token: str = Depends(JWTBearer())):
         return {
             "id": str(user["_id"]),
             "username": user.get("username"), 
+            "first_name": user.get("first_name"),
+            "last_name": user.get("last_name"),
             "email": user["email"],
             "last_login": user.get("last_login"),
             "is_admin": user.get("is_admin", False),
             "role": user.get("role", "user")
         }
     raise HTTPException(status_code=404, detail="User not found")
-# --- 6. LOGOUT ROUTE ---
+# --- 6. UPDATE PROFILE ---
+@router.put("/me", dependencies=[Depends(JWTBearer())])
+async def update_profile(
+    payload: dict = Body(...),
+    token: str = Depends(JWTBearer())
+):
+    decoded = decodeJWT(token)
+    email = decoded["email"]
+    
+    # Allowed fields
+    update_data = {}
+    if "first_name" in payload: update_data["first_name"] = payload["first_name"]
+    if "last_name" in payload: update_data["last_name"] = payload["last_name"]
+    
+    # Auto-update username if first/last name changed
+    if "first_name" in payload or "last_name" in payload:
+        user = await user_collection.find_one({"email": email})
+        fname = payload.get("first_name", user.get("first_name", ""))
+        lname = payload.get("last_name", user.get("last_name", ""))
+        update_data["username"] = f"{fname} {lname}".strip()
+
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+
+    result = await user_collection.update_one(
+        {"email": email},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count > 0:
+        return {"message": "Profile updated successfully", "username": update_data.get("username")}
+    
+    return {"message": "No changes made."}
+
+# --- 7. LOGOUT ROUTE ---
 @router.post("/logout", dependencies=[Depends(JWTBearer())])
 async def logout(token: str = Depends(JWTBearer())):
     # Delete session from DB

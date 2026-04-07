@@ -35,8 +35,8 @@
     }
     .avatar-icon {
         font-size: 5rem; 
-        color: var(--text-main); 
-        background: rgba(255,255,255,0.05); 
+        color: var(--primary); 
+        background: var(--input-bg); 
         padding: 30px; 
         border-radius: 50%; 
         border: 2px solid var(--primary);
@@ -59,10 +59,10 @@
         justify-content: center;
     }
     .login-pill {
-        background: rgba(0, 255, 136, 0.05); 
+        background: rgba(59, 130, 246, 0.05); 
         padding: 15px 30px; 
         border-radius: 12px; 
-        border: 1px solid rgba(0, 255, 136, 0.1); 
+        border: 1px solid var(--glass-border); 
         min-width: 220px;
     }
     .pill-title {
@@ -74,10 +74,74 @@
     }
     .pill-value {
         font-size: 1rem; 
-        color: #00ff88; 
-        font-weight: 600; 
+        color: var(--primary); 
+        font-weight: 700; 
         font-family: 'Courier New', monospace;
     }
+    
+    .account-actions {
+        display: flex; 
+        gap: 10px; 
+        justify-content: center;
+    }
+    .modal-layout-info {
+        text-align: left; 
+        max-width: 500px;
+    }
+    .profile-form-grid {
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        gap: 1rem; 
+        margin-bottom: 1.5rem;
+    }
+
+    /* Theme Option Section */
+    .theme-option-card {
+        background: var(--input-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        transition: 0.3s;
+    }
+    .theme-option-card:hover {
+        border-color: var(--primary);
+        background: var(--glass);
+    }
+    .theme-info {
+        text-align: left;
+    }
+    .theme-name {
+        font-weight: 700;
+        color: var(--text-main);
+        font-size: 0.9rem;
+        margin-bottom: 2px;
+    }
+    .theme-desc {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+        position: absolute; cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #cbd5e1; transition: .4s; border-radius: 34px;
+    }
+    .slider:before {
+        position: absolute; content: ""; height: 18px; width: 18px;
+        left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--primary); }
+    input:checked + .slider:before { transform: translateX(26px); }
 </style>
 
 <section class="page-fade-in profile-section">
@@ -105,16 +169,106 @@
                 </div>
             </div>
         </div>
+
+        <!-- Appearance Settings -->
+        <div class="theme-option-card">
+            <div class="theme-info">
+                <div class="theme-name">Dark Mode Preference</div>
+                <div class="theme-desc">Switch between light and dark aesthetics</div>
+            </div>
+            <label class="toggle-switch">
+                <input type="checkbox" id="profile-theme-toggle" aria-label="Dark Mode Toggle Selection">
+                <span class="slider"></span>
+            </label>
+        </div>
         
-        <button class="btn btn-ghost" onclick="location.reload()">
-            <i class="fa-solid fa-rotate"></i> Refresh Data
-        </button>
+        <div class="account-actions">
+            <button class="btn btn-primary" onclick="openEditProfileModal()">
+                <i class="fa-solid fa-user-pen"></i> Edit Profile
+            </button>
+            <button class="btn btn-ghost" onclick="location.reload()" title="Refresh Profile Data">
+                <i class="fa-solid fa-rotate"></i> Refresh Data
+            </button>
+        </div>
     </div>
 </section>
+
+<!-- EDIT PROFILE MODAL -->
+<div id="editProfileModal" class="global-modal-overlay">
+    <div class="global-modal-card modal-layout-info">
+        <h2 class="gmodal-title"><i class="fa-solid fa-user-pen color-primary"></i> Update Profile</h2>
+        <p class="gmodal-msg">Refine your logistics identity details.</p>
+        
+        <form id="editProfileForm">
+            <div class="profile-form-grid">
+                <div class="form-group">
+                    <input id="edit_first_name" name="first_name" type="text" class="form-input" placeholder=" " required />
+                    <label for="edit_first_name" class="form-label">First Name</label>
+                </div>
+                <div class="form-group">
+                    <input id="edit_last_name" name="last_name" type="text" class="form-input" placeholder=" " required />
+                    <label for="edit_last_name" class="form-label">Last Name</label>
+                </div>
+            </div>
+            
+            <div class="gmodal-actions">
+                <button type="button" class="btn-modal-close btn-modal-cancel" onclick="closeEditProfileModal()">CANCEL</button>
+                <button type="submit" class="btn-modal-close">SAVE CHANGES</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+    let currentProfile = {};
+
+    function openEditProfileModal() {
+        document.getElementById('edit_first_name').value = currentProfile.first_name || '';
+        document.getElementById('edit_last_name').value = currentProfile.last_name || '';
+        const modal = document.getElementById('editProfileModal');
+        modal.style.display = 'flex';
+        setTimeout(() => modal.querySelector('.global-modal-card').classList.add('active'), 10);
+    }
+
+    function closeEditProfileModal() {
+        const modal = document.getElementById('editProfileModal');
+        modal.querySelector('.global-modal-card').classList.remove('active');
+        setTimeout(() => modal.style.display = 'none', 400);
+    }
+
+    document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const payload = Object.fromEntries(formData.entries());
+
+        try {
+            const res = await postJSON('/api/v1/me', payload, true);
+            // Wait, we need PUT not POST. base.html has postJSON but let's check it.
+            // Actually, let's use fetch directly or fix postJSON to support method.
+            const putRes = await fetch('/api/v1/me', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + getToken()
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if(putRes.ok) {
+                showGlobalModal('Success', 'Profile updated successfully!', 'success');
+                closeEditProfileModal();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                const err = await putRes.json();
+                showGlobalModal('Error', err.detail || 'Update failed', 'error');
+            }
+        } catch(err) {
+            showGlobalModal('Error', 'Connection error', 'error');
+        }
+    });
+
     (async function(){
         const el = document.getElementById('profile');
         const loginEl = document.getElementById('loginTime');
@@ -122,7 +276,6 @@
         const formatDate = (dateString) => {
             if (!dateString) return "Just now";
             const date = new Date(dateString);
-            // Format: Nov 29, 2025, 02:37 PM
             return date.toLocaleString('en-US', {
                 month: 'short', 
                 day: 'numeric', 
@@ -137,32 +290,45 @@
             const res = await getJSON('/api/v1/me');
             if(res.ok) {
                 const u = await res.json();
+                currentProfile = u;
                 
-                // --- FIX: Username Display ---
-                // If username is empty in DB, fallback to 'Valued User' but try to show DB value first
-                const displayName = u.username ? u.username : "Valued User";
-
                 el.innerHTML = `
-                    <div style="font-size: 2.2rem; font-weight: 700; color: white; margin-bottom: 5px;">
-                        ${displayName}
+                    <div style="font-size: 2.2rem; font-weight: 700; color: var(--text-main); margin-bottom: 5px;">
+                        ${u.username || 'Logistics Pro'}
                     </div>
-                    <div style="color: var(--primary); font-size: 1.1rem;">
+                    <div style="color: var(--primary); font-size: 1.1rem; font-weight: 500;">
                         ${u.email}
                     </div>
-                    <div style="margin-top: 0.8rem; font-size: 0.8rem; color: var(--text-muted);">
-                        ID: <span style="font-family: monospace; background:rgba(255,255,255,0.1); padding:2px 5px; border-radius:4px;">${u.id}</span>
+                    <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <span style="text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Profile ID:</span>
+                        <span style="font-family: monospace; background: var(--input-bg); border: 1px solid var(--glass-border); padding: 4px 10px; border-radius: 6px; color: var(--text-main);">${u.id}</span>
                     </div>
                 `;
 
                 // --- FIX: Time Display ---
                 loginEl.textContent = formatDate(u.last_login);
 
+                // --- THEME TOGGLE LOGIC ---
+                const pToggle = document.getElementById('profile-theme-toggle');
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                pToggle.checked = currentTheme === 'dark';
+
+                pToggle.addEventListener('change', () => {
+                    const newTheme = pToggle.checked ? 'dark' : 'light';
+                    if (typeof setTheme === 'function') {
+                        setTheme(newTheme);
+                        // Optional: sync navbar toggle if it exists
+                        const navIcon = document.getElementById('theme-icon');
+                        if(navIcon) navIcon.className = newTheme === 'light' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+                    }
+                });
+
             } else { 
-                el.innerHTML = '<span style="color: var(--accent);">Session Expired. Please login again.</span>'; 
+                el.innerHTML = '<span style="color: var(--accent); font-weight: 700;">Session Expired. Please login again.</span>'; 
             }
         } catch(e) { 
-            console.error(e);
-            el.innerHTML = 'Error fetching profile data.'; 
+            console.error('Fetch Error:', e);
+            el.innerHTML = '<div style="color: #ef4444; font-weight: 600;"><i class="fa-solid fa-triangle-exclamation"></i> Error fetching profile data.</div>'; 
         }
     })();
 </script>

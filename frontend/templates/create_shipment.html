@@ -1,21 +1,32 @@
 {% extends "base.html" %}
-
 {% block title %}Create Shipment - SCMXpertLite{% endblock %}
 
 {% block content %}
 <style>
     .container {
         width: 100% !important;
-        max-width: 95% !important;
-        padding-top: 1rem !important;
-        padding-bottom: 1rem !important;
+        max-width: 85% !important;
+        margin: 0 auto !important;
+        padding-top: 3rem !important;
+        padding-bottom: 2rem !important;
         flex: 1;
         display: flex;
         flex-direction: column;
     }
+    .layout-grid { display: block; width: 100%; }
     section { flex: 1; display: flex; flex-direction: column; }
     /* Layout: 2 Columns (Form Left, Summary Right) */
-    .layout-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: stretch; flex: 1; min-height: 70vh; }
+    .action-row { 
+        display: flex; 
+        justify-content: flex-end; 
+        gap: 0.75rem; 
+        padding-top: 1.2rem; 
+        border-top: 1px solid var(--glass-border); 
+        margin-top: 1rem; 
+    }
+    .btn-create { padding: 0.5rem 1.2rem; font-size: 0.85rem; }
+    .btn-clear-row { background: #ff4757; color: white; border: none; padding: 0.5rem 1.2rem; font-size: 0.85rem; border-radius: 8px; cursor: pointer; transition: 0.3s; }
+    .btn-clear-row:hover { opacity: 0.8; }
     
     @media (max-width: 1024px) {
         .layout-grid { grid-template-columns: 1fr; }
@@ -27,7 +38,7 @@
         .glass-card { padding: 1.5rem !important; }
         .page-title { font-size: 1.8rem; }
     }
-    .glass-card { padding: 2rem !important; display: flex; flex-direction: column; }
+    .glass-card { padding: 1.5rem !important; display: flex; flex-direction: column; }
     .form-group { margin-bottom: 1.2rem !important; }
     .form-input { padding: 12px !important; font-size: 0.95rem !important; }
     .form-label { top: 12px !important; font-size: 0.95rem !important; }
@@ -35,16 +46,26 @@
         top: -10px !important;
         font-size: 0.8rem !important;
     }
+    .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; flex: 1; }
+    .date-label { 
+        top: -10px !important; 
+        left: 10px; 
+        background: var(--bg-deep) !important; 
+        color: var(--primary); 
+        font-size: 0.8rem !important; 
+        padding: 0 6px;
+        z-index: 5;
+    }
+    .full-col { grid-column: span 3; }
+    .span-2 { grid-column: span 2; }
     .page-title { margin-bottom: 0.5rem; font-size: 1.5rem; }
     .page-subtitle { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; flex: 1; }
-    .color-scheme-dark { color-scheme: dark; }
-    .date-label { top:-10px !important; left:10px; background:var(--bg-deep); color:var(--primary); font-size:0.8rem !important; }
+
     .summary-card { display: flex; flex-direction: column; height: 100%; }
     .summary-title { color: var(--secondary); margin-bottom: 1.5rem; font-size: 1.2rem; }
     .flex-1 { flex: 1; display: flex; flex-direction: column; }
-    .textarea-full { height: 100%; resize: none; min-height: 150px; flex: 1; }
-    .action-buttons { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .textarea-full { min-height: 80px; resize: none; flex: 1; }
+    .action-buttons { margin-top: auto; display: flex; flex-direction: column; gap: 1rem; padding-top: 2rem; }
     .btn-full { justify-content: center; width: 100%; padding: 1rem; font-size: 1.1rem; }
     .btn-clear { background: #ff4757; color: white; justify-content: center; width: 100%; border: none; padding: 1rem; font-size: 1.1rem; }
     .msg-box { text-align: center; margin-top: 1rem; min-height: 1.2rem; font-size: 1rem; }
@@ -71,88 +92,90 @@
                         <label for="Container_number" class="form-label">Container Number*</label>
                     </div>
 
-                    <!-- Row 2: Standardized Route Selection -->
-                    <div class="form-group full-col">
-                        <label for="Route_Details" class="form-label date-label">Route Selection*</label>
-                        <select id="Route_Details" name="Route_Details" class="form-input color-scheme-dark" required>
-                            <option value="" disabled selected>Select Global Route</option>
-                            <option>Newyork, USA → Chennai, India</option>
-                            <option>Chennai, India → Newyork, USA</option>
-                            <option>Chennai, India → London, UK</option>
-                            <option>Bengaluru, India → Newyork, USA</option>
-                            <option>London, UK → Chennai, India</option>
-                            <option>Newyork, USA → London, UK</option>
-                            <option>Bengaluru, India → London, UK</option>
-                            <option>Newyork, USA → Bengaluru, India</option>
-                            <option>Chennai, India → Bengaluru, India</option>
-                            <option>London, UK → Bengaluru, India</option>
-                            <option>Bengaluru, India → Chennai, India</option>
-                            <option>London, UK → Newyork, USA</option>
+                    <!-- Row 2: Standardized Origin & Destination -->
+                    <div class="form-group">
+                        <select id="Origin" name="Origin" class="form-input" required>
+                            <option value="" disabled selected>Select Origin Hub</option>
+                            <option>Newyork, USA</option>
+                            <option>Chennai, India</option>
+                            <option>London, UK</option>
+                            <option>Bengaluru, India</option>
                         </select>
+                        <label for="Origin" class="form-label">Origin hub*</label>
+                    </div>
+
+                    <div class="form-group">
+                        <select id="Destination" name="Destination" class="form-input" required>
+                            <option value="" disabled selected>Select Destination hub</option>
+                            <option>Newyork, USA</option>
+                            <option>Chennai, India</option>
+                            <option>London, UK</option>
+                            <option>Bengaluru, India</option>
+                        </select>
+                        <label for="Destination" class="form-label">Destination hub*</label>
                     </div>
 
                     <!-- Row 3: Goods & Device -->
                     <div class="form-group">
+                        <select id="Device" name="Device" class="form-input" title="Device ID" required>
+                            <option value="" disabled selected>Select Device ID</option>
+                            <option>IOT-1150</option>
+                            <option>IOT-1151</option>
+                            <option>IOT-1152</option>
+                            <option>IOT-1153</option>
+                            <option>IOT-1154</option>
+                            <option>IOT-1155</option>
+                            <option>IOT-1156</option>
+                            <option>IOT-1157</option>
+                            <option>IOT-1158</option>
+                        </select>
+                        <label for="Device" class="form-label">Device ID*</label>
+                    </div>
+
+                    <div class="form-group">
                         <input id="Goods_Type" name="Goods_Type" type="text" class="form-input" placeholder=" " title="Goods Type" required />
                         <label for="Goods_Type" class="form-label">Goods Type*</label>
                     </div>
-                    <div class="form-group">
-                        <input id="Device" name="Device" type="text" class="form-input" placeholder=" " title="Device" required />
-                        <label for="Device" class="form-label">Device*</label>
-                    </div>
 
-                    <!-- Row 4: Date & PO -->
                     <div class="form-group">
-                        <input id="Expected_Delivery_Date" name="Expected_Delivery_Date" type="datetime-local" class="form-input color-scheme-dark" title="Expected Delivery Date" required />
+                        <input id="Expected_Delivery_Date" name="Expected_Delivery_Date" type="datetime-local" class="form-input" required />
                         <label for="Expected_Delivery_Date" class="form-label date-label">Expected Delivery Date*</label>
                     </div>
+
                     <div class="form-group">
                         <input id="Po_Number" name="Po_Number" type="text" class="form-input" placeholder=" " title="PO Number" required />
                         <label for="Po_Number" class="form-label">PO Number*</label>
                     </div>
-
-                    <!-- Row 5: Delivery & NDC -->
                     <div class="form-group">
-                        <input id="Delivery_Number" name="Delivery_Number" type="text" class="form-input" placeholder=" " title="Delivery Number" />
+                        <input id="Delivery_Number" name="Delivery_Number" type="text" class="form-input" placeholder=" " title="Delivery Number" required />
                         <label for="Delivery_Number" class="form-label">Delivery Number*</label>
                     </div>
                     <div class="form-group">
                         <input id="NDC_Number" name="NDC_Number" type="text" class="form-input" placeholder=" " title="NDC Number" required />
                         <label for="NDC_Number" class="form-label">NDC Number*</label>
                     </div>
-
-                    <!-- Row 6: Batch & Serial -->
                     <div class="form-group">
-                        <input id="Batch_ID" name="Batch_ID" type="text" class="form-input" placeholder=" " title="Batch ID" />
-                        <label for="Batch_ID" class="form-label">Batch Id*</label>
+                        <input id="Batch_Id" name="Batch_Id" type="text" class="form-input" placeholder=" " title="Batch Id" required />
+                        <label for="Batch_Id" class="form-label">Batch Id*</label>
                     </div>
                     <div class="form-group">
-                        <input id="Serial_Number_of_Goods" name="Serial_Number_of_Goods" type="text" class="form-input" placeholder=" " title="Serial number of Goods" required />
-                        <label for="Serial_Number_of_Goods" class="form-label">Serial number of Goods*</label>
+                        <input id="Serial_Number_of_Goods" name="Serial_Number_of_Goods" type="text" class="form-input" placeholder=" " title="Serial Number" required />
+                        <label for="Serial_Number_of_Goods" class="form-label">Serial Number*</label>
+                    </div>
+
+                    <!-- Row 6: Description (Full Width) -->
+                    <div class="form-group full-col">
+                        <textarea id="Shipment_Description" name="Shipment_Description" class="form-input textarea-full" placeholder=" " title="Description" required></textarea>
+                        <label for="Shipment_Description" class="form-label">Shipment Description*</label>
                     </div>
                 </div>
+
+                <div class="action-row">
+                    <button type="submit" class="btn btn-primary btn-create"><i class="fa-solid fa-plus-circle"></i> CREATE SHIPMENT</button>
+                    <button type="button" class="btn-clear-row" onclick="clearForm()">CLEAR DATA</button>
+                </div>
+                <div id="msg-box" class="msg-box"></div>
             </form>
-        </div>
-
-        <!-- RIGHT PANEL: SUMMARY & ACTIONS -->
-        <div class="glass-card summary-card">
-            <h3 class="summary-title"><i class="fa-solid fa-clipboard-check"></i> Summary</h3>
-            
-            <div class="form-group flex-1">
-                <textarea id="Shipment_Description" form="createForm" name="Shipment_Description" class="form-input textarea-full" placeholder=" " title="Shipment Description"></textarea>
-                <label for="Shipment_Description" class="form-label">Shipment Description*</label>
-            </div>
-
-            <div class="action-buttons">
-                <button type="submit" form="createForm" class="btn btn-primary btn-full">
-                    CREATE SHIPMENT
-                </button>
-                <button type="button" onclick="document.getElementById('createForm').reset()" class="btn btn-clear">
-                    CLEAR DETAILS
-                </button>
-            </div>
-            
-            <div id="msg" class="msg-box"></div>
         </div>
 
     </div>
@@ -161,39 +184,41 @@
 
 {% block scripts %}
 <script>
+    async function clearForm() {
+        document.getElementById('createForm').reset();
+        document.getElementById('Shipment_Description').value = '';
+    }
+
     document.getElementById('createForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        // Gather Form Data
+        const msg = document.getElementById('msg-box');
+        msg.textContent = 'Transmitting shipment request...';
+        msg.style.color = 'var(--primary)';
+
         const formData = new FormData(e.target);
-        const raw = Object.fromEntries(formData.entries());
-
-        // 1. DIRECT ROUTE SELECTION
-        raw.Route_Details = document.getElementById('Route_Details').value;
-
-        // 2. Fix Date Format (ISO 8601)
-        if(raw.Expected_Delivery_Date) {
-            raw.Expected_Delivery_Date = new Date(raw.Expected_Delivery_Date).toISOString();
-        }
-
-        // 3. Remove 'Delivery_Number' if backend model doesn't accept it
-        delete raw.Delivery_Number; 
-
-        const msg = document.getElementById('msg');
-        msg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
+        const data = Object.fromEntries(formData.entries());
         
+        // Finalize Route Architecture
+        data.Route_Details = `${data.Origin} → ${data.Destination}`;
+        delete data.Origin;
+        delete data.Destination;
+
         try {
-            const res = await postJSON('/api/v1/shipments', raw, true);
+            const res = await postJSON('/api/v1/shipments', data);
             if(res.ok) {
-                msg.innerHTML = '<span style="color:#00ff88">Shipment Created Successfully!</span>';
-                setTimeout(() => window.location.href = '/my-shipments', 1000);
+                showGlobalModal('Shipment Operational', 'The new shipment registry has been committed successfully.', 'success');
+                clearForm();
+                msg.textContent = 'Success - Shipment Registered';
+                msg.style.color = '#10b981';
             } else {
                 const err = await res.json();
-                msg.innerHTML = `<span style="color:#ff4757">${err.detail || 'Failed to create.'}</span>`;
+                showGlobalModal('Entry Terminated', err.detail || 'The shipment entry was rejected by the master server.', 'error');
+                msg.textContent = 'Critical Fault during registration.';
+                msg.style.color = '#ff4b4b';
             }
-        } catch(err) { 
-            console.error(err);
-            msg.innerHTML = '<span style="color:#ff4757">Server connection error.</span>'; 
+        } catch (error) {
+            console.error('Error creating shipment:', error);
+            showGlobalModal('Comm Error', 'Network link terminated during registration. Please check uplink.', 'error');
         }
     });
 </script>
