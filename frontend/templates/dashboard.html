@@ -129,21 +129,17 @@
         .dashboard-stats { grid-template-columns: 1fr; }
     }
 
-    /* --- ADMIN VISUALIZATION --- */
+    /* --- ADMIN ANALYTICS RELOCATION --- */
     .admin-viz-section { margin-top: 2.5rem; display: none; }
-    .admin-viz-card { padding: 2rem; }
+    .admin-viz-card { padding: 2rem; background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--card-radius); }
     .viz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; }
     .viz-title { font-size: 1.4rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
-    .viz-table-wrapper { border-radius: 12px; border: 1px solid var(--glass-border); overflow: hidden; background: rgba(0,0,0,0.2); }
-    .viz-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .viz-table th { padding: 1.2rem; background: rgba(255,255,255,0.03); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid var(--glass-border); }
-    .viz-table td { padding: 1.2rem; border-bottom: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.95rem; }
-    .viz-table tr:hover { background: rgba(255,255,255,0.02); }
-    .temp-badge { padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; }
-    .temp-hot { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-    .temp-cold { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .temp-normal { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .viz-chart-container { background: rgba(0,0,0,0.1); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--glass-border); height: 400px; position: relative; }
+    .viz-accent-icon { color: var(--primary); }
+    .viz-refresh-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 5px; font-size: 1.1rem; transition: 0.3s; opacity: 0.7; }
+    .viz-refresh-btn:hover { color: var(--primary); opacity: 1; transform: rotate(180deg); }
 </style>
+
 
 <section class="page-fade-in {% if is_admin %}admin-context{% endif %}">
     <div class="dashboard-header">
@@ -246,26 +242,27 @@
         </div>
     </div>
 
-    <!-- ADMIN EXCLUSIVE: Device Comparison Visualization -->
+    <!-- ADMIN EXCLUSIVE: Telemetry Overview Relocated -->
     <div id="adminVizSection" class="admin-viz-section page-fade-in" {% if is_admin %}style="display: block;"{% endif %}>
-        <div class="glass-card admin-viz-card">
+        <div class="admin-viz-card">
             <div class="viz-header">
                 <div class="viz-title">
-                    <i class="fa-solid fa-chart-column viz-accent-icon"></i> Device Comparison Matrix
-                    <button id="refreshVizBtn" class="viz-refresh-btn" title="Refresh Comparison Data">
+                    <i class="fa-solid fa-chart-line viz-accent-icon"></i> 14-Day Volume Trends
+                    <button id="refreshTrendsBtn" class="viz-refresh-btn" title="Refresh Volume Trends">
                         <i class="fa-solid fa-arrows-rotate"></i>
                     </button>
                 </div>
                 <div class="viz-sub-text">
-                    <i class="fa-solid fa-filter"></i> User Created Shipments Only
+                    <i class="fa-solid fa-clock"></i> Historical Shipment Density Summary
                 </div>
             </div>
             
             <div class="viz-chart-container">
-                <canvas id="adminVizChart"></canvas>
+                <canvas id="trendsChart"></canvas>
             </div>
         </div>
     </div>
+
 </section>
 {% endblock %}
 
@@ -292,16 +289,15 @@
                 if(btn) btn.classList.remove('admin-btn-hidden');
                 if(statsRow) statsRow.style.setProperty('display', 'none', 'important');
                 
-                // Show Visualization Section
-                const vizSec = document.getElementById('adminVizSection');
-                if(vizSec) vizSec.style.display = 'block';
-                
-                // Re-fetch data with all=true if we initially fetched as non-admin
+                // Admin Fetch logic
                 if(!window.didAdminFetch) {
                     window.didAdminFetch = true;
                     refreshData(true);
-                    loadDeviceComparison();
+                    loadTrends();
                 }
+                
+                const vizSec = document.getElementById('adminVizSection');
+                if(vizSec) vizSec.style.display = 'block';
             } else {
                 if(dt) dt.textContent = "My Logistics Dashboard";
                 if(ds) ds.textContent = "Personal supply chain overview and tracking";
@@ -313,125 +309,49 @@
             }
         };
 
-        const loadDeviceComparison = async () => {
-            const ctx = document.getElementById('adminVizChart');
+        let trendsChart = null;
+        async function loadTrends() {
+            const ctx = document.getElementById('trendsChart');
             if(!ctx) return;
-            
-            try {
-                const res = await getJSON('/api/v1/admin/device-comparison');
+            const res = await getJSON('/api/v1/admin/stats/trends');
+            if(res.ok) {
                 const data = await res.json();
-                
-                if(!res.ok || !data.length) {
-                    return; // No data to plot
-                }
-                
-                const labels = data.map(i => i.Device);
-                const temps = data.map(i => i.Temperature || 0);
-                
-                // Status Mapping
-                const statusLevels = { 'Delivered': 3, 'In Transit': 2, 'In-Transit': 2, 'Delayed': 1 };
-                const statuses = data.map(i => statusLevels[i.Status] || 0);
-                
-                // Dynamic Bar Colors based on Status
-                const barColors = data.map(i => {
-                    if(i.Status === 'Delivered') return '#10b981'; // Green
-                    if(i.Status === 'Delayed') return '#f59e0b';   // Amber
-                    return '#3b82f6'; // Blue for Transit
-                });
-                
-                // Initialize Chart.js
-                if(window.adminChart) window.adminChart.destroy();
-                
-                window.adminChart = new Chart(ctx, {
-                    type: 'bar',
+                const chartCtx = ctx.getContext('2d');
+                if(trendsChart) trendsChart.destroy();
+                trendsChart = new Chart(chartCtx, {
+                    type: 'line',
                     data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: 'Status Tier',
-                                data: statuses,
-                                backgroundColor: barColors,
-                                borderRadius: 6,
-                                yAxisID: 'y-status',
-                                order: 2
-                            },
-                            {
-                                label: 'Temperature (°C)',
-                                data: temps,
-                                type: 'line',
-                                borderColor: '#00d2ff',
-                                backgroundColor: 'rgba(0, 210, 255, 0.1)',
-                                borderWidth: 3,
-                                fill: true,
-                                tension: 0.4,
-                                yAxisID: 'y-temp',
-                                pointRadius: 4,
-                                order: 1
-                            }
-                        ]
+                        labels: data.map(i => i.date),
+                        datasets: [{
+                            label: 'Shipment Created',
+                            data: data.map(i => i.count),
+                            borderColor: '#00d2ff',
+                            backgroundColor: 'rgba(0, 210, 255, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        interaction: { intersect: false, mode: 'index' },
-                        plugins: {
-                            legend: { display: true, position: 'top', labels: { color: '#94a3b8', font: { family: "'Outfit', sans-serif" } } },
-                            tooltip: {
-                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                                titleFont: { family: "'Outfit', sans-serif" },
-                                bodyFont: { family: "'Outfit', sans-serif" },
-                                padding: 12,
-                                borderRadius: 8,
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (context.dataset.label === 'Status Tier') {
-                                            const val = context.raw;
-                                            const name = val === 3 ? 'Delivered' : val === 2 ? 'In Transit' : val === 1 ? 'Delayed' : 'Unknown';
-                                            return `Current Status: ${name}`;
-                                        }
-                                        return `${label}: ${context.raw}°C`;
-                                    }
-                                }
-                            }
-                        },
                         scales: {
-                            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { family: "'Outfit', sans-serif" } } },
-                            'y-status': {
-                                type: 'linear', display: true, position: 'right',
-                                title: { display: true, text: 'Logistical Tier', color: '#10b981' },
-                                min: 0, max: 4,
-                                grid: { drawOnChartArea: false },
-                                ticks: {
-                                    stepSize: 1, color: '#94a3b8',
-                                    callback: function(value) {
-                                        if(value === 3) return 'DELIVERED';
-                                        if(value === 2) return 'TRANSIT';
-                                        if(value === 1) return 'DELAYED';
-                                        return '';
-                                    }
-                                }
-                            },
-                            'y-temp': {
-                                type: 'linear', display: true, position: 'left',
-                                title: { display: true, text: 'Temperature (°C)', color: '#00d2ff' },
-                                grid: { color: 'rgba(255,255,255,0.05)' },
-                                ticks: { color: '#94a3b8' }
-                            }
-                        }
+                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                        },
+                        plugins: { legend: { display: false } }
                     }
                 });
-            } catch(e) { console.error("Chart load error:", e); }
-        };
+            }
+        }
 
         // Bind Refresh Button
-        const refreshBtn = document.getElementById('refreshVizBtn');
+        const refreshBtn = document.getElementById('refreshTrendsBtn');
         if(refreshBtn) {
             refreshBtn.addEventListener('click', async () => {
                 const icon = refreshBtn.querySelector('i');
-                icon.classList.add('spin-active');
-                await loadDeviceComparison();
-                setTimeout(() => icon.classList.remove('spin-active'), 800);
+                icon.classList.add('fa-spin');
+                await loadTrends();
+                setTimeout(() => icon.classList.remove('fa-spin'), 1000);
             });
         }
 

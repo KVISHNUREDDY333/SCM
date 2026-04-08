@@ -425,3 +425,114 @@ async def get_device_comparison(token: str = Depends(JWTBearer())):
     await log_admin_action(email, "DEVICE_COMPARISON_FETCH", f"Fetched {len(comparison_data)} registry entries for visualization.")
     
     return comparison_data
+@router.get("/admin/analytics/status-distribution", dependencies=[Depends(VerifyAdmin())])
+async def get_status_distribution():
+    """Aggregates shipment counts by Status for Donut Chart."""
+    # Use aggregation to case-insensitively group statuses
+    # We'll normalize to common buckets: Transit, Delayed, Delivered, Cancelled
+    pipeline = [
+        {"$project": {
+            "normalized_status": {
+                "$cond": [
+                    {"$regexMatch": {"input": "$Status", "regex": "Transit", "options": "i"}}, "In Transit",
+                    {"$cond": [
+                        {"$regexMatch": {"input": "$Status", "regex": "Delayed", "options": "i"}}, "Delayed",
+                        {"$cond": [
+                            {"$regexMatch": {"input": "$Status", "regex": "Delivered", "options": "i"}}, "Delivered",
+                            {"$cond": [
+                                {"$regexMatch": {"input": "$Status", "regex": "Cancelled", "options": "i"}}, "Cancelled",
+                                "Other"
+                            ]}
+                        ]}
+                    ]}
+                ]
+            }
+        }},
+        {"$group": {"_id": "$normalized_status", "count": {"$sum": 1}}}
+    ]
+    
+    distribution = []
+    async for item in shipment_collection.aggregate(pipeline):
+        distribution.append({"status": item["_id"], "count": item["count"]})
+    return distribution
+
+@router.get("/admin/analytics/goods-distribution", dependencies=[Depends(VerifyAdmin())])
+async def get_goods_distribution():
+    """Aggregates shipment counts by Goods_Type for Bar Chart."""
+    pipeline = [
+        {"$group": {"_id": "$Goods_Type", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]
+    distribution = []
+    async for item in shipment_collection.aggregate(pipeline):
+        distribution.append({"type": item["_id"] or "Unknown", "count": item["count"]})
+    return distribution
+
+@router.get("/admin/analytics/telemetry-stats", dependencies=[Depends(VerifyAdmin())])
+async def get_telemetry_stats():
+    """Aggregates average temperature and battery from historical device stream."""
+    from backend.config.database import device_stream_collection
+    # Get last 100 points for real-time trend line
+    pipeline = [
+        {"$sort": {"_id": -1}},
+        {"$limit": 100},
+        {"$project": {
+            "timestamp": 1,
+            "Temperature": 1,
+            "Battery": {
+                "$convert": {
+                    "input": {"$substr": ["$Battery", 0, {"$subtract": [{"$strLenCP": "$Battery"}, 1]}]},
+                    "to": "int",
+                    "onError": 0,
+                    "onNull": 0
+                }
+            }
+        }},
+        {"$sort": {"_id": 1}}
+    ]
+    
+    stats = []
+    async for item in device_stream_collection.aggregate(pipeline):
+        stats.append({
+            "time": item.get("timestamp"),
+            "temp": item.get("Temperature", 0.0),
+            "battery": item.get("Battery", 0)
+        })
+    return stats
+
+@router.get("/admin/analytics/sla-performance", dependencies=[Depends(VerifyAdmin())])
+async def get_sla_performance():
+    """Calculates on-time vs overdue shipments based on Expected_Delivery_Date."""
+    now = datetime.utcnow().isoformat()
+    pipeline = [
+        {"$project": {
+            "is_overdue": {
+                "$and": [
+                    {"$lt": ["$Expected_Delivery_Date", now]},
+                    {"$ne": ["$Status", "Delivered"]}
+                ]
+            }
+        }},
+        {"$group": {"_id": "$is_overdue", "count": {"$sum": 1}}}
+    ]
+    performance = {"ontime": 0, "overdue": 0}
+    async for item in shipment_collection.aggregate(pipeline):
+        if item["_id"] == True:
+            performance["overdue"] = item["count"]
+        else:
+            performance["ontime"] = item["count"]
+    return performance
+
+@router.get("/admin/analytics/route-flow", dependencies=[Depends(VerifyAdmin())])
+async def get_route_flow():
+    """Aggregates shipment volume by Top 10 unique trade lanes."""
+    pipeline = [
+        {"$group": {"_id": "$Route_Details", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]
+    flow = []
+    async for item in shipment_collection.aggregate(pipeline):
+        flow.append({"route": item["_id"] or "Unknown", "count": item["count"]})
+    return flow

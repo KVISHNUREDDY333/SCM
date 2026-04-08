@@ -4,11 +4,16 @@
 {% block content %}
 <style>
     /* Perfect Centering Override for login page */
+    body {
+        overflow: hidden;
+    }
     .container {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        padding: 0 !important;
+        height: calc(100vh - 160px); /* Subtract approximate Navbar + Footer height */
     }
     .auth-wrapper {
         width: 100%;
@@ -272,6 +277,8 @@
     /* Responsive Logic for Mobile (Under 768px) */
     .mobile-toggle-link { display: none; }
     @media (max-width: 768px) {
+        body { overflow-y: auto !important; }
+        .container { height: auto !important; padding: 1rem !important; }
         .sliding-container {
             min-height: initial;
             overflow: visible;

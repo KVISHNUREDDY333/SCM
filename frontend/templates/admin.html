@@ -453,13 +453,34 @@
     .btn-blue-glass { background: rgba(59, 130, 246, 0.1) !important; color: #3b82f6 !important; }
     .btn-blue-glass:hover { background: #3b82f6 !important; color: white !important; }
     
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        margin-top: 1rem;
+    }
+    
+    .full-width-chart {
+        grid-column: span 2;
+    }
+
+    @media (max-width: 1000px) {
+        .analytics-grid { grid-template-columns: 1fr; }
+        .full-width-chart { grid-column: span 1; }
+    }
+    
     .chart-container { 
         background: var(--input-bg); 
         padding: 1.5rem; 
         border-radius: 16px; 
         border: 1px solid var(--glass-border); 
-        height: min(400px, 60vh); 
+        height: 350px; 
         position: relative; 
+        transition: transform 0.3s ease;
+    }
+    .chart-container:hover {
+        border-color: var(--primary);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -729,16 +750,46 @@
 
     <!-- TAB 3: BUSINESS ANALYTICS (Growth Suite) -->
     <div id="tab-analytics" class="tab-content">
-
         <div class="enterprise-actions mb-3">
             <button class="btn-ent" onclick="exportData('shipments')"><i class="fa-solid fa-file-csv"></i> Intelligence Export (CSV Master)</button>
         </div>
 
-        <div class="admin-section">
-            <div class="section-title"><i class="fa-solid fa-chart-pie color-primary"></i> Trend Visualizer (14-Day Overlook)</div>
-            <div class="chart-container">
-                <canvas id="trendsChart"></canvas>
+        <div class="analytics-grid">
+            <div class="admin-section full-width-chart">
+                <div class="section-title"><i class="fa-solid fa-temperature-half color-primary"></i> Telemetry Overview (Avg Temp/Bat)</div>
+                <div class="chart-container">
+                    <canvas id="telemetryChart"></canvas>
+                </div>
             </div>
+
+            <div class="admin-section">
+                <div class="section-title"><i class="fa-solid fa-chart-pie color-primary"></i> Shipment Status Distribution</div>
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <div class="section-title"><i class="fa-solid fa-layer-group color-primary"></i> Top Goods Categories</div>
+                <div class="chart-container">
+                    <canvas id="goodsChart"></canvas>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <div class="section-title"><i class="fa-solid fa-gauge-high color-primary"></i> SLA Compliance Performance</div>
+                <div class="chart-container">
+                    <canvas id="slaChart"></canvas>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <div class="section-title"><i class="fa-solid fa-route color-primary"></i> Top Trade Lanes (Route Flow)</div>
+                <div class="chart-container">
+                    <canvas id="routeChart"></canvas>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -919,7 +970,7 @@
             </div>
             <div class="modal-foot">
                 <button type="button" class="btn btn-ghost" onclick="closeBroadcastModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Transmit Now</button>
+                <button id="broadcastBtn" type="submit" class="btn btn-primary">Transmit</button>
             </div>
         </form>
     </div>
@@ -927,7 +978,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    let trendsChart = null;
+    let telemetryChart = null;
+    let statusChart = null;
+    let goodsChart = null;
+    let slaChart = null;
+    let routeChart = null;
     let currentUserEmail = "";
     let allShipments = [];
     let kafkaShipments = [];
@@ -1005,7 +1060,7 @@
 
         if(id === 'tab-users') loadUsers();
         if(id === 'tab-shipments') { loadShipments(); loadStats(); }
-        if(id === 'tab-analytics') loadTrends();
+        if(id === 'tab-analytics') loadAnalytics();
         if(id === 'tab-audit') loadAuditLogs();
     }
 
@@ -1037,12 +1092,24 @@
     }
 
     // Broadcast System
-    function openBroadcastModal() { document.getElementById('broadcastModal').style.display = 'flex'; }
-    function closeBroadcastModal() { document.getElementById('broadcastModal').style.display = 'none'; }
+    function openBroadcastModal() { 
+        document.getElementById('broadcastModal').style.display = 'flex'; 
+    }
+    
+    function closeBroadcastModal() { 
+        document.getElementById('broadcastModal').style.display = 'none';
+        document.getElementById('broadcast-msg').value = '';
+    }
     
     document.getElementById('broadcastForm').onsubmit = async (e) => {
         e.preventDefault();
-        const msg = document.getElementById('broadcast-msg').value;
+        const msg = document.getElementById('broadcast-msg').value.trim();
+        
+        if(!msg) {
+            showGlobalModal('Missing Content', 'Enter message to transmit', 'error');
+            return;
+        }
+
         const res = await fetch('/api/v1/admin/broadcast', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
@@ -1074,37 +1141,162 @@
         }
     }
 
-    // Business Analytics Chart
-    async function loadTrends() {
-        const res = await getJSON('/api/v1/admin/stats/trends');
-        if(res.ok) {
-            const data = await res.json();
-            const labels = data.map(d => d.date);
-            const counts = data.map(d => d.count);
 
-            if(trendsChart) trendsChart.destroy();
-            const ctx = document.getElementById('trendsChart').getContext('2d');
-            trendsChart = new Chart(ctx, {
+    async function loadAnalytics() {
+        // 0. Telemetry Stats
+        const teleRes = await getJSON('/api/v1/admin/analytics/telemetry-stats');
+        if(teleRes.ok) {
+            const data = await teleRes.json();
+            const ctx = document.getElementById('telemetryChart').getContext('2d');
+            if(telemetryChart) telemetryChart.destroy();
+            telemetryChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Shipment Volume',
-                        data: counts,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
+                    labels: data.map((_, idx) => idx),
+                    datasets: [
+                        {
+                            label: 'Temp (°C)',
+                            data: data.map(i => i.temp),
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            yAxisID: 'y',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Battery (%)',
+                            data: data.map(i => i.battery),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            yAxisID: 'y1',
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true, grid: { color: 'var(--glass-border)' } },
-                        x: { grid: { display: false } }
+                        y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Temp (°C)', color: '#ef4444' }, ticks: { color: '#94a3b8' } },
+                        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Battery (%)', color: '#10b981' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
                     },
-                    plugins: { legend: { display: false } }
+                    plugins: { legend: { labels: { color: '#94a3b8', font: { family: "'Outfit', sans-serif" } } } }
+                }
+            });
+        }
+
+        // 1. Status Distribution
+        const statusRes = await getJSON('/api/v1/admin/analytics/status-distribution');
+        if(statusRes.ok) {
+            const data = await statusRes.json();
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            if(statusChart) statusChart.destroy();
+            statusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(i => i.status),
+                    datasets: [{
+                        data: data.map(i => i.count),
+                        backgroundColor: ['#00d2ff', '#fbbf24', '#10b981', '#f87171', '#94a3b8'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { position: 'right', labels: { color: '#94a3b8', padding: 20 } }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        // 2. Goods Distribution
+        const goodsRes = await getJSON('/api/v1/admin/analytics/goods-distribution');
+        if(goodsRes.ok) {
+            const data = await goodsRes.json();
+            const ctx = document.getElementById('goodsChart').getContext('2d');
+            if(goodsChart) goodsChart.destroy();
+            goodsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(i => i.type),
+                    datasets: [{
+                        label: 'Shipments',
+                        data: data.map(i => i.count),
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+
+        // 3. SLA Performance
+        const slaRes = await getJSON('/api/v1/admin/analytics/sla-performance');
+        if(slaRes.ok) {
+            const data = await slaRes.json();
+            const ctx = document.getElementById('slaChart').getContext('2d');
+            if(slaChart) slaChart.destroy();
+            slaChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['On-Time', 'Overdue/Missing'],
+                    datasets: [{
+                        data: [data.ontime, data.overdue],
+                        backgroundColor: ['#10b981', '#f87171'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { color: '#94a3b8' } }
+                    },
+                    cutout: '80%'
+                }
+            });
+        }
+
+        // 4. Route Flow
+        const routeRes = await getJSON('/api/v1/admin/analytics/route-flow');
+        if(routeRes.ok) {
+            const data = await routeRes.json();
+            const ctx = document.getElementById('routeChart').getContext('2d');
+            if(routeChart) routeChart.destroy();
+            routeChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(i => i.route),
+                    datasets: [{
+                        label: 'Volume',
+                        data: data.map(i => i.count),
+                        backgroundColor: '#6366f1',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } }
+                    }
                 }
             });
         }
@@ -1546,7 +1738,7 @@
         await loadUsers();
         await loadShipments();
         await loadAuditLogs();
-        await loadTrends();
+        await loadAnalytics();
         checkHealth();
         setInterval(checkHealth, 10000);
     };
