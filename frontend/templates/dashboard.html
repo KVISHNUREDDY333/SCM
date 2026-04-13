@@ -391,8 +391,8 @@
                     item.style.cssText = `
                         background: var(--input-bg); padding: 1.2rem; border-radius: 12px;
                         border: 1px solid var(--glass-border); display: flex; justify-content: space-between;
-                        align-items: center; animation: fadeInUp 0.5s ease forwards; animation-delay: ${index * 0.1}s;
-                        opacity: 0; transform: translateY(10px); transition: all 0.3s;
+                        align-items: center; animation: fadeInUp var(--transition-speed) ease forwards;
+                        opacity: 0; transform: translateY(5px); transition: all var(--transition-speed);
                     `;
                     
                     // Hover effect logic
@@ -438,9 +438,6 @@
         };
         
         updateTitles();
-        setTimeout(updateTitles, 500);
-        setTimeout(updateTitles, 1500);
-        
         // Initial data fetch
         refreshData();
     })();

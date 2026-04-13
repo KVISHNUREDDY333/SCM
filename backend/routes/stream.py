@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException, Cookie
 from fastapi.responses import StreamingResponse
 from backend.auth.jwt_handler import decodeJWT
-from typing import Optional
+from typing import Optional, Set
 from aiokafka import AIOKafkaConsumer
 import asyncio
 import json
@@ -9,7 +9,12 @@ import random
 import uuid
 import datetime
 import os
-from backend.config.database import broadcast_collection
+from backend.config.database import (
+    broadcast_collection, 
+    shipment_collection, 
+    device_stream_collection,
+    user_collection
+)
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,151 +23,151 @@ router = APIRouter()
 KAFKA_SERVER = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "device_data")
 
-async def event_generator():
-    """
-    Generator that yields Server-Sent Events (SSE).
-    If Kafka is offline, it falls back to generating mock data.
-    """
-    kafka_available = False
-    consumer = None
+# --- CONCURRENCY OPTIMIZATION: GLOBAL BROADCASTER ---
+# This ensures only ONE Kafka listener (or simulator) runs, regardless of how many admins watch.
+class TelemetryBroadcaster:
+    def __init__(self):
+        self._subscribers: Set[asyncio.Queue] = set()
+        self._lock = asyncio.Lock()
+        self._running_task = None
 
-    # 1. Try connecting to Kafka
-    try:
-        client_id = str(uuid.uuid4())[:8]
-        consumer = AIOKafkaConsumer(
-            KAFKA_TOPIC,
-            bootstrap_servers=KAFKA_SERVER,
-            value_deserializer=lambda m: json.loads(m.decode('utf-8')),
-            auto_offset_reset='latest',
-            enable_auto_commit=False,  # No need to commit since it's a transient stream
-            group_id=f"scm_dashboard_group_{client_id}",
-            session_timeout_ms=30000,
-            heartbeat_interval_ms=10000
-        )
-        await consumer.start()
-        kafka_available = True
-        print(f"Connected to Kafka topic: {KAFKA_TOPIC}")
-    except Exception as e:
-        print(f"Kafka Connection Failed ({e}). Switching to SIMULATION MODE.")
+    async def subscribe(self) -> asyncio.Queue:
+        queue = asyncio.Queue(maxsize=100)
+        async with self._lock:
+            self._subscribers.add(queue)
+            if not self._running_task:
+                self._running_task = asyncio.create_task(self._main_broadcaster_loop())
+        return queue
+
+    async def unsubscribe(self, queue: asyncio.Queue):
+        async with self._lock:
+            self._subscribers.remove(queue)
+            if not self._subscribers and self._running_task:
+                self._running_task.cancel()
+                self._running_task = None
+
+    async def _main_broadcaster_loop(self):
+        """The single master loop for data ingest."""
         kafka_available = False
-
-    try:
-        if kafka_available:
-            # --- REAL KAFKA MODE ---
-            async for msg in consumer:
-                data = msg.value  # Already deserialized by value_deserializer
-                # Ensure data has the expected fields for frontend
-                formatted_data = {
-                    "Shipment_Number": data.get("Shipment_Number", "Unknown"),
-                    "Device": data.get("Device", "Unknown"),
-                    "Temperature": data.get("Temperature", 0.0),
-                    "Location": data.get("Route_Details", "Unknown"), 
-                    "Route_Details": data.get("Route_Details", "Unknown"),  
-                    "Battery": data.get("Battery", "0%"),
-                    "Status": data.get("Status", "In Transit"),
-                    "timestamp": data.get("timestamp", datetime.datetime.now().timestamp()),
-                    "is_kafka": True,
-                    "created_by": "KAFKA_SYSTEM"
-                }
-
-                # PERSIST TO DATABASE (UPSERT + ARCHIVE)
-                from backend.config.database import shipment_collection, device_stream_collection
-                await shipment_collection.update_one(
-                    {"Shipment_Number": formatted_data["Shipment_Number"]},
-                    {"$set": formatted_data},
-                    upsert=True
-                )
-                # Archive in device_stream for history tracking
-                await device_stream_collection.insert_one(formatted_data.copy())
-
-                yield f"data: {json.dumps(formatted_data)}\n\n"
-                
-                # Check for active broadcasts (non-blocking)
-                now = datetime.datetime.now()
-                broadcast = await broadcast_collection.find_one({"expires_at": {"$gt": now}})
-                if broadcast:
-                    yield f"data: {json.dumps({'type': 'broadcast', 'content': broadcast['message']})}\n\n"
-        else:
-            # --- SIMULATION MODE ---
-            routes = ['Newyork,USA', 'Chennai, India', 'Bengaluru, India', 'London,UK']
-            
-            while True:
-                await asyncio.sleep(3)  # Match producer delay
-                
-                # Generate fake sensor data matching your producer format
-                routefrom = random.choice(routes)
-                routeto = random.choice(routes)
-                while routefrom == routeto:
-                    routeto = random.choice(routes)
-                
-                mock_data = {
-                    "Shipment_Number": f"SHP-{random.randint(1000, 9999)}",
-                    "Device": f"IOT-{random.randint(1150, 1158)}",
-                    "Temperature": round(random.uniform(10, 40.0), 1),
-                    "Location": f"{routefrom} ➝ {routeto}",
-                    "Route_Details": f"{routefrom} ➝ {routeto}",  
-                    "Battery": f"{random.randint(20, 100)}%",  
-                    "Status": "In Transit",
-                    "timestamp": datetime.datetime.now().timestamp(),
-                    "is_kafka": True,
-                    "created_by": "KAFKA_SYSTEM"
-                }
-
-                # PERSIST TO DATABASE (UPSERT + ARCHIVE)
-                from backend.config.database import shipment_collection, device_stream_collection
-                await shipment_collection.update_one(
-                    {"Shipment_Number": mock_data["Shipment_Number"]},
-                    {"$set": mock_data},
-                    upsert=True
-                )
-                # Archive in device_stream for history tracking
-                await device_stream_collection.insert_one(mock_data.copy())
-                
-                yield f"data: {json.dumps(mock_data)}\n\n"
-
-                # Check for active broadcasts in simulation mode
-                now = datetime.datetime.now()
-                broadcast = await broadcast_collection.find_one({"expires_at": {"$gt": now}})
-                if broadcast:
-                    yield f"data: {json.dumps({'type': 'broadcast', 'content': broadcast['message']})}\n\n"
-
-    except asyncio.CancelledError:
-        print("Client disconnected from stream.")
-    except Exception as e:
-        print(f"Stream error: {e}")
-    finally:
-        # Ensure proper cleanup
-        if consumer is not None:
+        consumer = None
+        
+        try:
+            # Attempt Kafka Connection
             try:
+                consumer = AIOKafkaConsumer(
+                    KAFKA_TOPIC,
+                    bootstrap_servers=KAFKA_SERVER,
+                    value_deserializer=lambda m: json.loads(m.decode('utf-8')),
+                    auto_offset_reset='latest',
+                    enable_auto_commit=False,
+                    group_id=f"scm_master_broadcaster_{str(uuid.uuid4())[:8]}"
+                )
+                await consumer.start()
+                kafka_available = True
+                print("Broadcaster: KAFKA LINK ESTABLISHED.")
+            except Exception:
+                print("Broadcaster: KAFKA OFFLINE. Simulation Mode Activated.")
+
+            if kafka_available:
+                async for msg in consumer:
+                    await self._process_and_broadcast(msg.value)
+            else:
+                # Simulation Logic
+                routes = ['Newyork,USA', 'Chennai, India', 'Bengaluru, India', 'London,UK']
+                while True:
+                    await asyncio.sleep(1) # Frequency
+                    routefrom, routeto = random.sample(routes, 2)
+                    mock_data = {
+                        "Shipment_Number": f"SHP-{random.randint(1000, 9999)}",
+                        "Device": f"IOT-{random.randint(1150, 1158)}",
+                        "Temperature": round(random.uniform(10, 40.0), 1),
+                        "Battery": f"{random.randint(20, 100)}%",
+                        "Location": f"{routefrom} ➝ {routeto}",
+                        "Route_Details": f"{routefrom} ➝ {routeto}",
+                        "timestamp": datetime.datetime.now().timestamp(),
+                        "is_kafka": True,
+                        "created_by": "KAFKA_SYSTEM"
+                    }
+                    await self._process_and_broadcast(mock_data)
+
+        except asyncio.CancelledError:
+            print("Broadcaster: Master task shutting down.")
+        finally:
+            if consumer:
                 await consumer.stop()
-            except Exception as cleanup_err:
-                print(f"Error while stopping consumer: {cleanup_err}")
+
+    async def _process_and_broadcast(self, data):
+        """Process incoming data, save to DB ONCE, and push to all queues."""
+        # Standardize
+        formatted = {
+            "Shipment_Number": data.get("Shipment_Number", "Unknown"),
+            "Device": data.get("Device", "Unknown"),
+            "Temperature": data.get("Temperature", 0.0),
+            "Location": data.get("Location") or data.get("Route_Details", "Unknown"),
+            "Route_Details": data.get("Route_Details") or data.get("Location", "Unknown"),
+            "Battery": data.get("Battery", "0%"),
+            "timestamp": data.get("timestamp") or datetime.datetime.now().timestamp(),
+            "is_kafka": True
+        }
+
+        # Save to DB (Singleton Write Strategy)
+        await shipment_collection.update_one(
+            {"Shipment_Number": formatted["Shipment_Number"]},
+            {"$set": formatted},
+            upsert=True
+        )
+        await device_stream_collection.insert_one(formatted.copy())
+
+        # Check Broadcasts
+        now = datetime.datetime.now()
+        broadcast = await broadcast_collection.find_one({"expires_at": {"$gt": now}})
+        broadcast_pkg = None
+        if broadcast:
+            broadcast_pkg = {"type": "broadcast", "content": broadcast['message']}
+
+        # Push to all active sub-processes
+        async with self._lock:
+            for q in self._subscribers:
+                try:
+                    q.put_nowait(formatted)
+                    if broadcast_pkg: q.put_nowait(broadcast_pkg)
+                except asyncio.QueueFull:
+                    pass
+
+# Singleton Instance
+broadcaster = TelemetryBroadcaster()
 
 @router.get("/events")
 async def message_stream(
     token: Optional[str] = Query(None), 
     scm_token: Optional[str] = Cookie(None)
 ):
-    """Endpoint that frontend EventSource connects to."""
-    # Prioritize cookie to keep logs clean
     active_token = scm_token or token
-    
     decoded = decodeJWT(active_token)
     if not active_token or not decoded:
         raise HTTPException(status_code=403, detail="Unauthenticated Stream Request")
     
-    from backend.config.database import user_collection
     user = await user_collection.find_one({"email": decoded.get("email")})
     if not user or not user.get("is_admin"):
         raise HTTPException(status_code=403, detail="Admin privileges required for stream access.")
-        
+
+    async def stream():
+        queue = await broadcaster.subscribe()
+        try:
+            while True:
+                data = await queue.get()
+                yield f"data: {json.dumps(data)}\n\n"
+        except asyncio.CancelledError:
+            pass
+        finally:
+            await broadcaster.unsubscribe(queue)
+
     return StreamingResponse(
-        event_generator(), 
+        stream(), 
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Cache-Control"
+            "X-Accel-Buffering": "no" # Critical for Nginx/Proxy performance
         }
     )

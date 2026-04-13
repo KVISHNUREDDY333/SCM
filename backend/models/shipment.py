@@ -14,6 +14,7 @@ class ShipmentSchema(BaseModel):
     Expected_Delivery_Date: datetime
 
     Batch_ID: Optional[str] = None
+    Delivery_Number: Optional[str] = None
     Shipment_Description: Optional[str] = None
     Status: Optional[str] = "In Transit"
     Notify_User: Optional[bool] = False

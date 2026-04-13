@@ -500,6 +500,10 @@
                 <label class="select-label">Batch ID</label>
                 <input id="edit_Batch_ID" name="Batch_ID" type="text" class="filter-input">
             </div>
+            <div class="form-group">
+                <label class="select-label">Delivery Number</label>
+                <input id="edit_Delivery_Number" name="Delivery_Number" type="text" class="filter-input">
+            </div>
             <div class="form-group span-3">
                 <label class="select-label">Shipment Description</label>
                 <textarea id="edit_Shipment_Description" name="Shipment_Description" class="filter-input description-area"></textarea>
@@ -678,6 +682,7 @@
         document.getElementById('edit_Serial_Number_of_Goods').value = shipment.Serial_Number_of_Goods || "N/A";
         document.getElementById('edit_Container_number').value = shipment.Container_number || "N/A";
         document.getElementById('edit_Batch_ID').value = shipment.Batch_ID || "";
+        document.getElementById('edit_Delivery_Number').value = shipment.Delivery_Number || "";
         document.getElementById('edit_Shipment_Description').value = shipment.Shipment_Description || "";
         document.getElementById('edit_Status').value = shipment.Status || "In Transit";
 

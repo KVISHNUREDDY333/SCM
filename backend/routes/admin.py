@@ -1,6 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from backend.config.database import user_collection, shipment_collection, database, audit_collection, broadcast_collection, settings_collection, direct_messages_collection
+from backend.config.database import (
+    user_collection, 
+    shipment_collection, 
+    database, 
+    audit_collection, 
+    broadcast_collection, 
+    settings_collection, 
+    direct_messages_collection,
+    device_stream_collection
+)
 from backend.middleware.security import VerifyAdmin, JWTBearer
 from backend.models.admin_models import UserUpdateSchema, AuditLogSchema, BroadcastSchema, MaintenanceSchema, DirectMessageSchema
 from backend.auth.jwt_handler import decodeJWT
@@ -26,51 +35,68 @@ async def log_admin_action(admin_email: str, action: str, details: str):
 
 @router.get("/admin/stats", dependencies=[Depends(VerifyAdmin())])
 async def get_admin_stats():
-    """Returns granular global system statistics for User and Kafka shipments."""
-    total_users = await user_collection.count_documents({})
+    """Returns granular global system statistics with explicit error safety."""
     
-    # helper for status counts
-    async def get_source_metrics(query):
-        total = await shipment_collection.count_documents(query)
-        transit = await shipment_collection.count_documents({**query, "Status": {"$regex": "Transit", "$options": "i"}})
-        delayed = await shipment_collection.count_documents({**query, "Status": {"$regex": "Delayed", "$options": "i"}})
-        delivered = await shipment_collection.count_documents({**query, "Status": {"$regex": "Delivered", "$options": "i"}})
-        cancelled = await shipment_collection.count_documents({**query, "Status": {"$regex": "Cancelled", "$options": "i"}})
-        
-        # Unique devices for this source
-        pipeline = [{"$match": query}, {"$group": {"_id": "$Device"}}]
-        devices_cursor = shipment_collection.aggregate(pipeline)
-        devices = 0
-        async for _ in devices_cursor: devices += 1
-        
-        return {
-            "total": total,
-            "transit": transit,
-            "delayed": delayed,
-            "delivered": delivered,
-            "cancelled": cancelled,
-            "devices": devices
-        }
+    async def get_metrics_optimized(query):
+        try:
+            pipeline = [
+                {"$match": query},
+                {"$group": {
+                    "_id": None,
+                    "total": {"$sum": 1},
+                    "transit": {"$sum": {"$cond": [{"$regexMatch": {"input": {"$ifNull": ["$Status", "In Transit"]}, "regex": "Transit", "options": "i"}}, 1, 0]}},
+                    "delayed": {"$sum": {"$cond": [{"$regexMatch": {"input": {"$ifNull": ["$Status", ""]}, "regex": "Delayed", "options": "i"}}, 1, 0]}},
+                    "delivered": {"$sum": {"$cond": [{"$regexMatch": {"input": {"$ifNull": ["$Status", ""]}, "regex": "Delivered", "options": "i"}}, 1, 0]}},
+                    "cancelled": {"$sum": {"$cond": [{"$regexMatch": {"input": {"$ifNull": ["$Status", ""]}, "regex": "Cancelled", "options": "i"}}, 1, 0]}},
+                    "devices": {"$addToSet": "$Device"}
+                }}
+            ]
+            cursor = shipment_collection.aggregate(pipeline)
+            result = await cursor.to_list(length=1)
+            
+            if not result:
+                return {"total": 0, "transit": 0, "delayed": 0, "delivered": 0, "cancelled": 0, "devices": 0}
+            
+            data = result[0]
+            return {
+                "total": int(data.get("total", 0)),
+                "transit": int(data.get("transit", 0)),
+                "delayed": int(data.get("delayed", 0)),
+                "delivered": int(data.get("delivered", 0)),
+                "cancelled": int(data.get("cancelled", 0)),
+                "devices": int(len(data.get("devices", [])))
+            }
+        except Exception as e:
+            print(f"Metrics Error: {e}")
+            return {"total": 0, "transit": 0, "delayed": 0, "delivered": 0, "cancelled": 0, "devices": 0}
 
     user_query = {"$or": [{"is_kafka": {"$exists": False}}, {"is_kafka": False}]}
     kafka_query = {"is_kafka": True}
 
-    user_metrics = await get_source_metrics(user_query)
-    kafka_metrics = await get_source_metrics(kafka_query)
-    
-    # SYSTEM OVERRIDE: Kafka "Packets" and "Persisted" reflect absolute historical telemetry counts
-    from backend.config.database import device_stream_collection
-    telemetry_count = await device_stream_collection.count_documents({})
-    kafka_metrics["total"] = telemetry_count
-    kafka_metrics["delivered"] = telemetry_count # Mapping "Persisted" to historical archive count
+    try:
+        results = await asyncio.gather(
+            get_metrics_optimized(user_query),
+            get_metrics_optimized(kafka_query),
+            user_collection.count_documents({}),
+            device_stream_collection.count_documents({})
+        )
+        
+        user_m, kafka_m, u_count, t_count = results
+        
+        # Override Kafka with absolute telemetry counts
+        kafka_m["total"] = t_count
+        kafka_m["delivered"] = t_count
 
-    return {
-        "total_users": total_users,
-        "user_shipments": user_metrics,
-        "kafka_shipments": kafka_metrics,
-        "total_shipments": user_metrics["total"] + kafka_metrics["total"],
-        "active_devices": user_metrics["devices"] + kafka_metrics["devices"]
-    }
+        return {
+            "total_users": int(u_count),
+            "user_shipments": user_m,
+            "kafka_shipments": kafka_m,
+            "total_shipments": int(user_m["total"] + kafka_m["total"]),
+            "active_devices": int(user_m["devices"] + kafka_m["devices"])
+        }
+    except Exception as e:
+        print(f"Global Stats Error: {e}")
+        return {"total_users": 0, "user_shipments": {}, "kafka_shipments": {}, "total_shipments": 0, "active_devices": 0}
 
 @router.get("/admin/users", dependencies=[Depends(VerifyAdmin())])
 async def get_all_users():
@@ -141,7 +167,6 @@ async def update_user(user_id: str, payload: UserUpdateSchema, token: str = Depe
 @router.get("/admin/device-stream", dependencies=[Depends(VerifyAdmin())])
 async def get_device_stream():
     """Returns historical raw telemetry from the device_stream collection."""
-    from backend.config.database import device_stream_collection
     telemetry = []
     async for entry in device_stream_collection.find().sort("_id", -1).limit(1000):
         entry["_id"] = str(entry["_id"])
@@ -156,7 +181,6 @@ async def delete_telemetry(record_id: str, token: str = Depends(JWTBearer())):
     except:
         raise HTTPException(status_code=400, detail="Invalid ID format")
 
-    from backend.config.database import device_stream_collection
     result = await device_stream_collection.delete_one({"_id": obj_id})
     if result.deleted_count == 1:
         email = decodeJWT(token).get("email")
@@ -472,7 +496,6 @@ async def get_goods_distribution():
 @router.get("/admin/analytics/telemetry-stats", dependencies=[Depends(VerifyAdmin())])
 async def get_telemetry_stats():
     """Aggregates average temperature and battery from historical device stream."""
-    from backend.config.database import device_stream_collection
     # Get last 100 points for real-time trend line
     pipeline = [
         {"$sort": {"_id": -1}},

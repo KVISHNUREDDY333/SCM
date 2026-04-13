@@ -9,25 +9,29 @@
     <!-- Favicon from static folder -->
     <link rel="icon" href="/static/favicon.png" type="image/png">
 
+    <!-- Connectivity Hints (Performance) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         :root {
-            /* DARK THEME (Original) */
-            --primary: #00d2ff;
+            --primary: #2563eb;
             --secondary: #3a7bd5;
             --accent: #f89b29;
-            --bg-deep: #0a0e17;
-            --glass: rgba(20, 30, 48, 0.6);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --text-main: #ffffff;
+            --bg-deep: #0f172a;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f1f5f9;
             --text-muted: #94a3b8;
-            --card-radius: 20px;
-            --nav-bg: rgba(10, 14, 23, 0.7);
-            --input-bg: rgba(0, 0, 0, 0.3);
-            --modal-bg: #0f172a;
+            --card-radius: 16px;
+            --modal-bg: rgba(15, 23, 42, 0.9);
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --transition-speed: 0.15s; /* Snappier default */
         }
 
         :root[data-theme='light'] {
@@ -67,7 +71,7 @@
             top: 0; left: 0; width: 100%; height: 100%;
             z-index: -1;
             background: radial-gradient(circle at center, #1a2a3a 0%, #0a0e17 100%);
-            transition: background 0.5s ease;
+            transition: background var(--transition-speed) ease;
         }
 
         :root[data-theme='light'] #canvas-bg {
@@ -96,7 +100,7 @@
         
         .nav-item {
             color: var(--text-muted); text-decoration: none; font-size: 0.95rem;
-            padding: 0.6rem 1.2rem; border-radius: 12px; transition: all 0.3s ease;
+            padding: 0.6rem 1.2rem; border-radius: 12px; transition: all var(--transition-speed) ease;
             position: relative; overflow: hidden;
         }
         
@@ -111,10 +115,12 @@
         }
 
         .btn {
-            padding: 0.7rem 1.5rem; border-radius: 50px; border: none; cursor: pointer;
-            font-weight: 600; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px;
-            text-decoration: none;
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 12px 24px; border-radius: 12px; font-weight: 700;
+            cursor: pointer; transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none; border: none; will-change: transform, box-shadow;
         }
+        .btn:active { transform: scale(0.96) !important; }
         .btn-primary {
             background: linear-gradient(135deg, var(--secondary), var(--primary));
             color: white; box-shadow: 0 4px 20px rgba(0, 210, 255, 0.3);
@@ -148,12 +154,12 @@
         .form-group { margin-bottom: 1.5rem; position: relative; }
         .form-label {
             position: absolute; left: 15px; top: 15px; color: var(--text-muted);
-            pointer-events: none; transition: 0.3s ease; font-size: 0.9rem;
+            pointer-events: none; transition: var(--transition-speed); font-size: 0.9rem;
         }
         .form-input {
             width: 100%; padding: 14px; background: var(--input-bg);
             border: 1px solid var(--glass-border); border-radius: 12px;
-            color: var(--text-main); font-size: 1rem; transition: 0.3s;
+            color: var(--text-main); font-size: 1rem; transition: var(--transition-speed);
         }
         select.form-input {
             appearance: none;
@@ -177,6 +183,7 @@
         input[type="datetime-local"].form-input ~ .form-label {
             top: -10px; left: 10px; font-size: 0.8rem; color: var(--primary);
             background: var(--bg-deep); padding: 0 6px; font-weight: 600;
+            will-change: top, font-size;
         }
 
         .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
@@ -247,10 +254,11 @@
         .btn-modal-close {
             flex: 1; padding: 12px; border-radius: 12px;
             background: var(--primary); color: white; border: none;
-            font-weight: 700; cursor: pointer; transition: 0.3s;
+            font-weight: 700; cursor: pointer; transition: 0.2s;
             text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;
         }
-        .btn-modal-close:hover { background: var(--secondary); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .btn-modal-close:hover { background: var(--secondary); transform: translateY(-1px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .btn-modal-close:active { transform: scale(0.97); }
         .btn-modal-cancel { 
             background: var(--input-bg); 
             border: 1px solid var(--glass-border); 
@@ -266,8 +274,9 @@
             position: fixed; top: 0; right: -400px; width: 400px; height: 100%;
             background: var(--modal-bg); -webkit-backdrop-filter: blur(25px); backdrop-filter: blur(25px);
             border-left: 1px solid var(--glass-border); z-index: 10001;
-            box-shadow: -10px 0 30px rgba(0,0,0,0.1); transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1); transition: 0.25s cubic-bezier(0.19, 1, 0.22, 1);
             display: flex; flex-direction: column; text-align: left;
+            will-change: right;
         }
         :root[data-theme='dark'] .notif-drawer {
             background: rgba(15, 23, 42, 0.95);
@@ -292,6 +301,7 @@
         .notif-meta { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); font-family: monospace; }
         .bell-btn { position: relative; background: none; border: none; font-size: 1.3rem; color: var(--text-muted); cursor: pointer; padding: 10px; display: flex; align-items: center; transition: 0.3s; border-radius: 10px; }
         .bell-btn:hover { background: var(--input-bg); color: var(--primary); }
+        .bell-btn:active { transform: scale(0.9); }
         .bell-dot { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 10px #ef4444; display: none; }
         .empty-notif { text-align: center; color: var(--text-muted); padding: 3rem 1rem; font-style: italic; font-size: 0.9rem; }
 
@@ -438,6 +448,11 @@
         <div class="brand"><i class="fa-solid fa-boxes-stacked"></i> SCMXpertLite</div>
         
         <div class="header-actions">
+            <!-- THEME TOGGLE -->
+            <div class="theme-toggle-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle Visual Style">
+                <i class="fa-solid fa-moon" id="theme-icon"></i>
+            </div>
+
             <!-- BURGER TOGGLE FOR MOBILE -->
             <div class="nav-burger" id="mobile-toggle">
                 <span></span>
@@ -504,6 +519,16 @@
         window.setTheme = function(theme) {
             htmlElement.setAttribute('data-theme', theme);
             localStorage.setItem('scm_theme', theme);
+            const icon = document.getElementById('theme-icon');
+            if(icon) {
+                icon.className = theme === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+            }
+        };
+
+        window.toggleTheme = function() {
+            const current = localStorage.getItem('scm_theme') || 'light';
+            const next = current === 'light' ? 'dark' : 'light';
+            window.setTheme(next);
         };
         const savedTheme = localStorage.getItem('scm_theme') || 'light';
         window.setTheme(savedTheme);
@@ -637,9 +662,19 @@
             const token = getToken();
             if(token) {
                 try {
-                    const res = await getJSON('/api/v1/me');
-                    if(res.ok) {
-                        const user = await res.json();
+                    let user;
+                    const cachedUser = sessionStorage.getItem('scm_user_data');
+                    if(cachedUser) {
+                        user = JSON.parse(cachedUser);
+                    } else {
+                        const res = await getJSON('/api/v1/me');
+                        if(res.ok) {
+                            user = await res.json();
+                            sessionStorage.setItem('scm_user_data', JSON.stringify(user));
+                        }
+                    }
+
+                    if(user) {
                         
                         // Sync storage
                         if(user.role) localStorage.setItem('user_role', user.role);
@@ -951,6 +986,12 @@
                 });
             }
         }
+        window.handleLogout = function() {
+            document.cookie = "scm_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.replace('/');
+        };
     </script>
     {% block scripts %}{% endblock %}
 </body>

@@ -27,7 +27,7 @@
         display: flex;
         align-items: center;
         gap: 1.5rem;
-        transition: transform 0.3s ease, border-color 0.3s ease;
+        transition: transform var(--transition-speed), border-color var(--transition-speed);
     }
     .stat-card:hover {
         transform: translateY(-5px);
@@ -89,9 +89,57 @@
         background: var(--glass);
         border-radius: var(--card-radius);
         padding: 2rem;
-        border: 1px solid var(--glass-border);
     }
-    .section-title { font-size: 1.4rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 12px; margin-bottom: 2rem; position: relative; }
+    :root[data-theme='dark'] .admin-section {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: var(--text-main);
+    }
+
+    .refresh-viz-btn {
+        background: transparent;
+        border: 1px solid var(--glass-border);
+        color: var(--text-muted);
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .refresh-viz-btn:hover {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+        transform: rotate(30deg);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .refresh-viz-btn:active {
+        transform: scale(0.9) rotate(90deg);
+    }
+
+    .refresh-viz-btn.spinning i {
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
     
     /* SOURCE TOGGLE SYSTEM */
     .source-toggle-wrap {
@@ -756,35 +804,60 @@
 
         <div class="analytics-grid">
             <div class="admin-section full-width-chart">
-                <div class="section-title"><i class="fa-solid fa-temperature-half color-primary"></i> Telemetry Overview (Avg Temp/Bat)</div>
+                <div class="section-title">
+                    <span><i class="fa-solid fa-temperature-half color-primary"></i> Telemetry Overview (Avg Temp/Bat)</span>
+                    <button class="refresh-viz-btn" onclick="refreshViz(this, 'telemetry')" title="Refresh Telemetry Data">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                </div>
                 <div class="chart-container">
                     <canvas id="telemetryChart"></canvas>
                 </div>
             </div>
 
             <div class="admin-section">
-                <div class="section-title"><i class="fa-solid fa-chart-pie color-primary"></i> Shipment Status Distribution</div>
+                <div class="section-title">
+                    <span><i class="fa-solid fa-chart-pie color-primary"></i> Shipment Status Distribution</span>
+                    <button class="refresh-viz-btn" onclick="refreshViz(this, 'status')" title="Refresh Status Distribution">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                </div>
                 <div class="chart-container">
                     <canvas id="statusChart"></canvas>
                 </div>
             </div>
 
             <div class="admin-section">
-                <div class="section-title"><i class="fa-solid fa-layer-group color-primary"></i> Top Goods Categories</div>
+                <div class="section-title">
+                    <span><i class="fa-solid fa-box color-primary"></i> Goods Category Volume</span>
+                    <button class="refresh-viz-btn" onclick="refreshViz(this, 'goods')" title="Refresh Goods Data">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                </div>
                 <div class="chart-container">
                     <canvas id="goodsChart"></canvas>
                 </div>
             </div>
 
             <div class="admin-section">
-                <div class="section-title"><i class="fa-solid fa-gauge-high color-primary"></i> SLA Compliance Performance</div>
+                <div class="section-title">
+                    <span><i class="fa-solid fa-calendar-check color-primary"></i> SLA Compliance Performance</span>
+                    <button class="refresh-viz-btn" onclick="refreshViz(this, 'sla')" title="Refresh SLA Performance">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                </div>
                 <div class="chart-container">
                     <canvas id="slaChart"></canvas>
                 </div>
             </div>
 
             <div class="admin-section">
-                <div class="section-title"><i class="fa-solid fa-route color-primary"></i> Top Trade Lanes (Route Flow)</div>
+                <div class="section-title">
+                    <span><i class="fa-solid fa-route color-primary"></i> Strategic Route Flow</span>
+                    <button class="refresh-viz-btn" onclick="refreshViz(this, 'route')" title="Refresh Route Flow">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                </div>
                 <div class="chart-container">
                     <canvas id="routeChart"></canvas>
                 </div>
@@ -945,6 +1018,10 @@
                 <label class="form-label">Batch ID (Optional)</label>
                 <input id="edit_Batch_ID" name="Batch_ID" type="text" class="form-input">
             </div>
+            <div class="form-group">
+                <label class="form-label">Delivery Number (Optional)</label>
+                <input id="edit_Delivery_Number" name="Delivery_Number" type="text" class="form-input">
+            </div>
             <div class="form-group full-col">
                 <label class="form-label">Shipment Description</label>
                 <textarea id="edit_Shipment_Description" name="Shipment_Description" class="form-input form-textarea"></textarea>
@@ -988,6 +1065,7 @@
     let kafkaShipments = [];
     let currentSource = 'user'; // 'user' or 'kafka'
     let sseSource = null;
+    let loadedTabs = new Set();
 
     // Source Switching
     window.switchShipmentSource = function(mode) {
@@ -1057,6 +1135,10 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         btn.classList.add('active');
+
+        // Only load data if not already loaded this session (simple cache)
+        if(loadedTabs.has(id)) return;
+        loadedTabs.add(id);
 
         if(id === 'tab-users') loadUsers();
         if(id === 'tab-shipments') { loadShipments(); loadStats(); }
@@ -1302,6 +1384,21 @@
         }
     }
 
+    async function refreshViz(btn, type) {
+        if(btn) btn.classList.add('spinning');
+        try {
+            await loadAnalytics();
+            addLog(`Intelligence refresh synchronized for ${type}.`);
+        } catch(e) {
+            addLog(`Sync failure: Telemetry link unstable.`);
+        }
+        if(btn) {
+            setTimeout(() => {
+                btn.classList.remove('spinning');
+            }, 800);
+        }
+    }
+
     function addLog(msg) {
         const log = document.getElementById('activity-logs');
         log.innerHTML = `<span class="ticker-timestamp">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
@@ -1309,24 +1406,39 @@
 
     // 1. Fetch Stats
     async function loadStats() {
-        const res = await getJSON('/api/v1/admin/stats');
-        if(res.ok) {
+        try {
+            const res = await getJSON('/api/v1/admin/stats');
+            if(!res.ok) throw new Error('Stats endpoint rejected request');
             const data = await res.json();
             
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if(el) el.textContent = (val !== undefined && val !== null) ? val : 0;
+            };
+
             // Populate User Stats
-            document.getElementById('val-users-user').textContent = data.total_users;
-            document.getElementById('val-shipments-user').textContent = data.user_shipments.total;
-            document.getElementById('count-transit-user').textContent = data.user_shipments.transit;
-            document.getElementById('count-delayed-user').textContent = data.user_shipments.delayed;
-            document.getElementById('count-delivered-user').textContent = data.user_shipments.delivered;
-            document.getElementById('count-cancelled-user').textContent = data.user_shipments.cancelled;
+            setVal('val-users-user', data.total_users);
+            if(data.user_shipments) {
+                setVal('val-shipments-user', data.user_shipments.total);
+                setVal('count-transit-user', data.user_shipments.transit);
+                setVal('count-delayed-user', data.user_shipments.delayed);
+                setVal('count-delivered-user', data.user_shipments.delivered);
+                setVal('count-cancelled-user', data.user_shipments.cancelled);
+            }
 
             // Populate Kafka Stats
-            document.getElementById('val-devices-kafka').textContent = data.kafka_shipments.devices;
-            document.getElementById('val-shipments-kafka').textContent = data.kafka_shipments.total;
-            document.getElementById('count-transit-kafka').textContent = data.kafka_shipments.transit;
-            document.getElementById('count-delayed-kafka').textContent = data.kafka_shipments.delayed;
-            document.getElementById('count-delivered-kafka').textContent = data.kafka_shipments.delivered;
+            if(data.kafka_shipments) {
+                setVal('val-devices-kafka', data.kafka_shipments.devices);
+                setVal('val-shipments-kafka', data.kafka_shipments.total);
+                setVal('count-transit-kafka', data.kafka_shipments.transit);
+                setVal('count-delayed-kafka', data.kafka_shipments.delayed);
+                setVal('count-delivered-kafka', data.kafka_shipments.delivered);
+            }
+            
+            addLog("Core operational metrics synchronized.");
+        } catch(err) {
+            console.error(err);
+            addLog("Registry sync fault: Statistics cluster unreachable.");
         }
     }
 
@@ -1370,7 +1482,7 @@
 
                 tr.innerHTML = `
                     <td>
-                        <div class="user-info-name">${u.first_name} ${u.last_name}</div>
+                        <div class="user-info-name">${u.first_name || 'Generic'} ${u.last_name || 'Agent'}</div>
                         <div class="user-info-email">${u.email}</div>
                     </td>
                     <td><span class="tag ${roleClass}">${roleLabel} ${isMe ? '(Me)' : ''}</span></td>
@@ -1551,6 +1663,26 @@
         }
     }
 
+    async function deleteUser(id, email) {
+        confirmGlobalModal('⚠️ Permanent Purge', `Are you sure you want to PERMANENTLY delete user ${email}? This action is irreversible.`, async () => {
+            try {
+                const res = await fetch(`/api/v1/admin/users/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                if(res.ok) {
+                    addLog(`User ${email} permanently purged from registry.`);
+                    showGlobalModal('User Purged', `Identity ${email} has been erased.`, 'success');
+                    loadUsers();
+                    loadStats();
+                } else {
+                    const err = await res.json();
+                    showGlobalModal('Purge Failed', err.detail || 'Access denied or record protected.', 'error');
+                }
+            } catch(e) { console.error(e); showGlobalModal('System Error', 'Network or server failure.', 'error'); }
+        });
+    }
+
     // --- SEARCH LOGIC ---
     function toggleFilterInput() {
         const key = document.getElementById('globalSearchKey').value;
@@ -1619,6 +1751,7 @@
         document.getElementById('edit_Serial_Number_of_Goods').value = shipment.Serial_Number_of_Goods || "N/A";
         document.getElementById('edit_Container_number').value = shipment.Container_number || "N/A";
         document.getElementById('edit_Batch_ID').value = shipment.Batch_ID || "";
+        document.getElementById('edit_Delivery_Number').value = shipment.Delivery_Number || "";
         document.getElementById('edit_Shipment_Description').value = shipment.Shipment_Description || "";
         document.getElementById('edit_Status').value = shipment.Status || "In Transit";
 
@@ -1649,6 +1782,7 @@
             Serial_Number_of_Goods: document.getElementById('edit_Serial_Number_of_Goods').value,
             Container_number: document.getElementById('edit_Container_number').value,
             Batch_ID: document.getElementById('edit_Batch_ID').value,
+            Delivery_Number: document.getElementById('edit_Delivery_Number').value,
             Shipment_Description: document.getElementById('edit_Shipment_Description').value,
             Status: document.getElementById('edit_Status').value,
             Expected_Delivery_Date: document.getElementById('edit_Expected_Delivery_Date').value

@@ -55,7 +55,11 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
-# --- 2. Security Middleware (IP Access) ---
+# --- 2. GZip Compression (Performance boost) ---
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
+# --- 3. Security Middleware (IP Access) ---
 # Note: Middleware runs in reverse order of addition. 
 # We want IP check to happen BEFORE CORS or anything else ideally.
 app.add_middleware(IPAccessMiddleware)
@@ -88,16 +92,8 @@ app.include_router(shipments.router, prefix="/api/v1", tags=["Shipments"])
 app.include_router(stream.router, tags=["Stream"])
 app.include_router(admin.router, prefix="/api/v1", tags=["Admin"])
 
-# --- Frontend Page Routes ---
+# --- 4. Frontend Page Routes ---
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
-
-@app.get("/")
-async def serve_index(request: Request):
-    return templates.TemplateResponse(request=request, name="login.html", context={
-        "request": request, 
-        "GOOGLE_CLIENT_ID": os.getenv("GOOGLE_CLIENT_ID", ""),
-        "RECAPTCHA_SITE_KEY": RECAPTCHA_SITE_KEY
-    })
 
 async def get_page_context(request: Request):
     """Helper to get common template context (Auth, Admin status, etc)"""
