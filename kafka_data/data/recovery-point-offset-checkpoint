@@ -21,7 +21,7 @@ __consumer_offsets 20 0
 __consumer_offsets 49 0
 __consumer_offsets 0 0
 __consumer_offsets 29 0
-device_data 0 10797
+device_data 0 11950
 __consumer_offsets 25 0
 __consumer_offsets 8 0
 __consumer_offsets 37 0
@@ -50,4 +50,4 @@ __consumer_offsets 27 0
 __consumer_offsets 39 0
 __consumer_offsets 6 0
 __consumer_offsets 35 0
-__consumer_offsets 2 3572
+__consumer_offsets 2 4183
